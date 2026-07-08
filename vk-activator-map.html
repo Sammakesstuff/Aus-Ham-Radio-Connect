@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VK POTA / SOTA / WWFF Activator Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
+<style>
+  :root{
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-border: #2a313c;
+    --text: #e6edf3;
+    --text-dim: #8b96a5;
+    --accent-sota: #ff8c42;
+    --accent-pota: #4caf7d;
+    --accent-wwff: #6fa8dc;
+    --accent-bota: #c77dff;
+    --live: #ff3b5c;
+    --danger-bg: #3a1a1e;
+    --danger-border: #7a2530;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg); color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  #app{ display:flex; flex-direction:column; height:100vh; }
+
+  header{
+    padding:10px 16px;
+    background:var(--panel);
+    border-bottom:1px solid var(--panel-border);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  header h1{
+    font-size:16px; margin:0; white-space:nowrap; font-weight:600;
+  }
+  header h1 span{ color:var(--text-dim); font-weight:400; font-size:12px; margin-left:8px;}
+
+  #controls{
+    flex:1;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    font-size:13px;
+  }
+  .ctrl-group{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .ctrl-group label{ display:flex; align-items:center; gap:4px; cursor:pointer; white-space:nowrap; }
+  .swatch{ width:10px; height:10px; border-radius:50%; display:inline-block; }
+  select, input[type=text]{
+    background:#0d1117; color:var(--text); border:1px solid var(--panel-border);
+    border-radius:6px; padding:5px 8px; font-size:13px;
+  }
+  input[type=checkbox]{ accent-color:#4caf7d; }
+  button{
+    background:#21262d; color:var(--text); border:1px solid var(--panel-border);
+    border-radius:6px; padding:6px 12px; font-size:13px; cursor:pointer;
+  }
+  button:hover{ background:#2d333b; }
+  button:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  #status-bar{
+    padding:4px 16px; font-size:11px; color:var(--text-dim);
+    background:var(--panel); border-bottom:1px solid var(--panel-border);
+    display:flex; gap:16px; flex-wrap:wrap;
+  }
+  #status-bar b{ color:var(--text); }
+
+  #map-wrap{ flex:1; position:relative; }
+  #map{ position:absolute; inset:0; background:#0d1117; }
+
+  #error-banner{
+    display:none;
+    position:absolute; top:10px; left:50%; transform:translateX(-50%);
+    z-index:2000; max-width:90%;
+    background:var(--danger-bg); border:1px solid var(--danger-border);
+    color:#ffb4bb; padding:10px 14px; border-radius:8px; font-size:13px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);
+  }
+  #error-banner.show{ display:block; }
+  #error-banner .close-btn{
+    float:right; cursor:pointer; margin-left:12px; color:#ffb4bb; font-weight:bold;
+  }
+
+  .leaflet-popup-content-wrapper{
+    background:#161b22; color:var(--text); border-radius:8px;
+  }
+  .leaflet-popup-tip{ background:#161b22; }
+  .popup-title{ font-weight:700; font-size:14px; margin-bottom:2px; }
+  .popup-sub{ color:var(--text-dim); font-size:12px; margin-bottom:6px; }
+  .popup-row{ font-size:12px; margin:2px 0; }
+  .popup-live{
+    display:inline-block; background:var(--live); color:#fff; font-size:10px;
+    padding:2px 6px; border-radius:10px; font-weight:700; letter-spacing:0.5px;
+    margin-bottom:4px;
+  }
+  .popup-link{ color:#7dbfff; text-decoration:none; font-size:12px; }
+  .popup-link:hover{ text-decoration:underline; }
+
+  .divicon-marker{
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,0.85);
+    box-shadow:0 0 0 2px rgba(0,0,0,0.4);
+  }
+  .divicon-live{
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(255,59,92,0.6);}
+    70%{ box-shadow:0 0 0 10px rgba(255,59,92,0);}
+    100%{ box-shadow:0 0 0 0 rgba(255,59,92,0);}
+  }
+
+  .marker-cluster-custom{
+    background:rgba(76,175,125,0.25);
+    border:2px solid rgba(76,175,125,0.6);
+    border-radius:50%;
+    color:#e6edf3;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:600;
+  }
+
+  #legend{
+    position:absolute; bottom:14px; left:14px; z-index:900;
+    background:rgba(22,27,34,0.92); border:1px solid var(--panel-border);
+    border-radius:8px; padding:10px 12px; font-size:12px; color:var(--text-dim);
+  }
+  #legend .row{ display:flex; align-items:center; gap:6px; margin:3px 0; }
+
+  #loading-overlay{
+    position:absolute; inset:0; z-index:1500;
+    background:rgba(13,17,23,0.85);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px; font-size:14px; color:var(--text-dim);
+  }
+  .spinner{
+    width:28px; height:28px; border-radius:50%;
+    border:3px solid #2a313c; border-top-color:#4caf7d;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  @media (max-width: 760px){
+    header{ flex-direction:column; align-items:flex-start; }
+    #legend{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>VK Activator Map <span>POTA &middot; SOTA &middot; WWFF</span></h1>
+    <div id="controls">
+      <div class="ctrl-group">
+        <label><input type="checkbox" id="chk-pota" checked><span class="swatch" style="background:var(--accent-pota)"></span>POTA</label>
+        <label><input type="checkbox" id="chk-sota" checked><span class="swatch" style="background:var(--accent-sota)"></span>SOTA</label>
+        <label><input type="checkbox" id="chk-wwff" checked><span class="swatch" style="background:var(--accent-wwff)"></span>WWFF</label>
+      </div>
+      <div class="ctrl-group">
+        <label for="sel-state">State/Assoc:</label>
+        <select id="sel-state"><option value="ALL">All VK</option></select>
+      </div>
+      <div class="ctrl-group">
+        <label><input type="checkbox" id="chk-activated-only">Activated only</label>
+        <label><input type="checkbox" id="chk-live-only">Live now only</label>
+      </div>
+      <div class="ctrl-group">
+        <input type="text" id="search-box" placeholder="Search reference or name...">
+      </div>
+      <div class="ctrl-group">
+        <button id="btn-refresh-spots">Refresh live spots</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="status-bar">
+    <span>POTA parks: <b id="stat-pota">-</b></span>
+    <span>SOTA summits: <b id="stat-sota">-</b></span>
+    <span>WWFF refs: <b id="stat-wwff">-</b></span>
+    <span>Live spots: <b id="stat-live">-</b></span>
+    <span>Last spot refresh: <b id="stat-refresh">never</b></span>
+  </div>
+
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="error-banner"><span class="close-btn" onclick="hideError()">&times;</span><span id="error-text"></span></div>
+    <div id="legend">
+      <div class="row"><span class="swatch" style="background:var(--accent-pota)"></span> POTA park</div>
+      <div class="row"><span class="swatch" style="background:var(--accent-sota)"></span> SOTA summit</div>
+      <div class="row"><span class="swatch" style="background:var(--accent-wwff)"></span> WWFF reference</div>
+      <div class="row"><span class="swatch" style="background:var(--live)"></span> Live activation now</div>
+    </div>
+    <div id="loading-overlay">
+      <div class="spinner"></div>
+      <div id="loading-text">Loading reference data...</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.4.1/papaparse.min.js"></script>
+<script>
+/* ============================================================
+   VK POTA / SOTA / WWFF Activator Map
+   Self-contained dashboard. Pulls live reference + spot data
+   from POTA, SOTA and WWFF public sources.
+   ============================================================ */
+
+// ---------- Global error handling ----------
+window.addEventListener('error', function(e){
+  showError('Script error: ' + (e.message || 'unknown error'));
+});
+window.addEventListener('unhandledrejection', function(e){
+  showError('Async error: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+});
+
+function showError(msg){
+  const banner = document.getElementById('error-banner');
+  const text = document.getElementById('error-text');
+  text.textContent = msg;
+  banner.classList.add('show');
+  console.error(msg);
+}
+function hideError(){
+  document.getElementById('error-banner').classList.remove('show');
+}
+function setLoading(visible, text){
+  const el = document.getElementById('loading-overlay');
+  if(text) document.getElementById('loading-text').textContent = text;
+  el.style.display = visible ? 'flex' : 'none';
+}
+
+// ---------- VK association / state list ----------
+// SOTA association codes for Australia
+const VK_SOTA_ASSOCIATIONS = ['VK1','VK2','VK3','VK4','VK5','VK6','VK7','VK8/CV','VK8/DA','VK8/NT','VK8/SS','VK9','VK0'];
+// Rough label mapping (state) used to populate the filter dropdown & for POTA/WWFF grouping by prefix
+const VK_STATE_LABELS = {
+  'VK1':'ACT','VK2':'NSW','VK3':'VIC','VK4':'QLD','VK5':'SA','VK6':'WA','VK7':'TAS',
+  'VK8':'NT','VK9':'External Territories','VK0':'Antarctica/Islands'
+};
+
+function stateKeyFromAny(str){
+  if(!str) return null;
+  const m = String(str).toUpperCase().match(/VK(\d)/);
+  return m ? ('VK'+m[1]) : null;
+}
+
+// ---------- Map init ----------
+const map = L.map('map', { zoomControl: true, minZoom: 3 }).setView([-25.5, 134.5], 5);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap &copy; CARTO',
+  maxZoom: 18, subdomains: 'abcd'
+}).addTo(map);
+
+const clusterPota = L.markerClusterGroup({ iconCreateFunction: clusterIcon('pota'), maxClusterRadius: 50 });
+const clusterSota = L.markerClusterGroup({ iconCreateFunction: clusterIcon('sota'), maxClusterRadius: 50 });
+const clusterWwff = L.markerClusterGroup({ iconCreateFunction: clusterIcon('wwff'), maxClusterRadius: 50 });
+map.addLayer(clusterPota); map.addLayer(clusterSota); map.addLayer(clusterWwff);
+
+function clusterIcon(kind){
+  const colors = { pota:'#4caf7d', sota:'#ff8c42', wwff:'#6fa8dc' };
+  return function(cluster){
+    const count = cluster.getChildCount();
+    const size = count < 10 ? 30 : count < 50 ? 38 : 46;
+    return L.divIcon({
+      html: `<div class="marker-cluster-custom" style="width:${size}px;height:${size}px;border-color:${colors[kind]}88;background:${colors[kind]}33">${count}</div>`,
+      className: '', iconSize: L.point(size, size)
+    });
+  };
+}
+
+function makeDotIcon(color, live){
+  const size = live ? 16 : 12;
+  return L.divIcon({
+    className: '',
+    html: `<div class="divicon-marker ${live?'divicon-live':''}" style="width:${size}px;height:${size}px;background:${color};"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2],
+    popupAnchor: [0, -size/2]
+  });
+}
+
+// ---------- Data stores ----------
+let potaParks = [];   // {reference,name,lat,lon,state,activations,active}
+let sotaSummits = []; // {code,name,lat,lon,state,alt,points,activationCount}
+let wwffRefs = [];    // {reference,name,lat,lon,state}
+let liveSpots = { pota:new Map(), sota:new Map(), wwff:new Map() }; // key: reference -> spot info
+
+let markersPota = new Map(); // reference -> marker
+let markersSota = new Map();
+let markersWwff = new Map();
+
+// ---------- Fetch helpers ----------
+// POTA/SOTA's servers generally don't send Access-Control-Allow-Origin for
+// arbitrary sites, so a direct cross-origin fetch from this file often fails
+// with a generic "Failed to fetch" (the browser blocks it before we ever see
+// a status code). We try a direct fetch first, then fall back to a couple of
+// public CORS proxies. If all of them fail, we surface the real error.
+const CORS_PROXIES = [
+  url => url, // direct, no proxy
+  url => 'https://corsproxy.io/?url=' + encodeURIComponent(url),
+  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)
+];
+
+async function fetchWithFallback(url){
+  let lastErr = null;
+  for(const buildUrl of CORS_PROXIES){
+    try{
+      const res = await fetch(buildUrl(url), { cache: 'no-store' });
+      if(!res.ok) { lastErr = new Error('HTTP '+res.status); continue; }
+      return res;
+    }catch(err){
+      lastErr = err;
+    }
+  }
+  throw new Error('All fetch attempts failed for ' + url + ' (' + (lastErr ? lastErr.message : 'unknown') + '). This is likely a CORS restriction on the source server, or your network settings blocking these domains.');
+}
+
+async function fetchJson(url){
+  const res = await fetchWithFallback(url);
+  return res.json();
+}
+async function fetchText(url){
+  const res = await fetchWithFallback(url);
+  return res.text();
+}
+
+// ---------- POTA reference data ----------
+async function loadPotaParks(){
+  try{
+    const data = await fetchJson('https://api.pota.app/program/parks/VK');
+    potaParks = (data || []).map(p => {
+      const lat = parseFloat(p.latitude);
+      const lon = parseFloat(p.longitude);
+      return {
+        reference: p.reference,
+        name: p.name || p.reference,
+        lat, lon,
+        state: stateKeyFromAny(p.locationDesc || p.reference) || 'VK?',
+        activations: parseInt(p.activations || 0, 10) || 0,
+        grid: p.grid || null
+      };
+    }).filter(p => isFinite(p.lat) && isFinite(p.lon));
+    document.getElementById('stat-pota').textContent = potaParks.length.toLocaleString();
+  }catch(err){
+    showError('Could not load POTA park list: ' + err.message);
+    potaParks = [];
+    document.getElementById('stat-pota').textContent = 'error';
+  }
+}
+
+// ---------- SOTA reference data ----------
+async function loadSotaSummits(){
+  try{
+    const csvText = await fetchText('https://www.sotadata.org.uk/summitslist.csv');
+    const lines = csvText.split(/\r?\n/);
+    // First line of this file is a generated-date comment; find the real header row.
+    let headerIdx = lines.findIndex(l => l.startsWith('SummitCode'));
+    if(headerIdx === -1) headerIdx = 0;
+    const csvBody = lines.slice(headerIdx).join('\n');
+    const parsed = Papa.parse(csvBody, { header: true, skipEmptyLines: true });
+    const rows = parsed.data;
+    sotaSummits = rows
+      .filter(r => r.SummitCode && r.SummitCode.startsWith('VK'))
+      .map(r => {
+        const lat = parseFloat(r.Latitude);
+        const lon = parseFloat(r.Longitude);
+        return {
+          code: r.SummitCode,
+          name: r.SummitName || r.SummitCode,
+          lat, lon,
+          state: stateKeyFromAny(r.SummitCode) || 'VK?',
+          alt: r.AltM || '',
+          points: r.Points || '',
+          activationCount: parseInt(r.ActivationCount || 0, 10) || 0
+        };
+      })
+      .filter(s => isFinite(s.lat) && isFinite(s.lon));
+    document.getElementById('stat-sota').textContent = sotaSummits.length.toLocaleString();
+  }catch(err){
+    showError('Could not load SOTA summit list: ' + err.message);
+    sotaSummits = [];
+    document.getElementById('stat-sota').textContent = 'error';
+  }
+}
+
+// ---------- WWFF reference data (placeholder - extend when a stable CSV/API URL is confirmed) ----------
+async function loadWwffRefs(){
+  // WWFF does not have a documented CORS-friendly live API at the time this was written.
+  // Leaving this as a soft no-op so the layer toggle exists but doesn't error the whole app.
+  wwffRefs = [];
+  document.getElementById('stat-wwff').textContent = '0 (not yet wired up)';
+}
+
+// ---------- Live spots ----------
+async function loadPotaSpots(){
+  try{
+    const data = await fetchJson('https://api.pota.app/spot/activator');
+    liveSpots.pota.clear();
+    (data || []).forEach(s => {
+      if(!s.reference || !s.reference.startsWith('VK')) return;
+      liveSpots.pota.set(s.reference, {
+        callsign: s.activator, freq: s.frequency, mode: s.mode,
+        time: s.spotTime, comment: s.comments || ''
+      });
+    });
+  }catch(err){
+    showError('Could not refresh POTA live spots: ' + err.message);
+  }
+}
+
+async function loadSotaSpots(){
+  try{
+    const data = await fetchJson('https://api-db2.sota.org.uk/api/spots/60/all/all');
+    liveSpots.sota.clear();
+    (data || []).forEach(s => {
+      const code = s.summitCode || s.SummitCode;
+      if(!code || !code.startsWith('VK')) return;
+      liveSpots.sota.set(code, {
+        callsign: s.activatorCallsign || s.callsign,
+        freq: s.frequency, mode: s.mode,
+        time: s.timeStamp, comment: s.comments || s.comment || ''
+      });
+    });
+  }catch(err){
+    showError('Could not refresh SOTA live spots: ' + err.message);
+  }
+}
+
+async function refreshAllSpots(){
+  document.getElementById('btn-refresh-spots').disabled = true;
+  await Promise.all([loadPotaSpots(), loadSotaSpots()]);
+  document.getElementById('btn-refresh-spots').disabled = false;
+  const totalLive = liveSpots.pota.size + liveSpots.sota.size + liveSpots.wwff.size;
+  document.getElementById('stat-live').textContent = totalLive.toLocaleString();
+  document.getElementById('stat-refresh').textContent = new Date().toLocaleTimeString();
+  rebuildMarkers();
+}
+
+// ---------- Marker building ----------
+function popupHtml(kind, ref){
+  let title, sub, extraRows = [], live = null, link = '';
+  if(kind === 'pota'){
+    const p = potaParks.find(x => x.reference === ref);
+    if(!p) return '';
+    title = p.reference; sub = p.name;
+    extraRows.push(`Activations: ${p.activations}`);
+    if(p.grid) extraRows.push(`Grid: ${p.grid}`);
+    link = `https://pota.app/#/park/${p.reference}`;
+    live = liveSpots.pota.get(ref);
+  } else if(kind === 'sota'){
+    const s = sotaSummits.find(x => x.code === ref);
+    if(!s) return '';
+    title = s.code; sub = s.name;
+    extraRows.push(`Alt: ${s.alt} m &middot; Points: ${s.points}`);
+    extraRows.push(`Activations: ${s.activationCount}`);
+    link = `https://www.sotadata.org.uk/en/summit/${s.code}`;
+    live = liveSpots.sota.get(ref);
+  } else {
+    return '';
+  }
+  let html = `<div class="popup-title">${title}</div><div class="popup-sub">${sub}</div>`;
+  if(live){
+    html += `<div class="popup-live">ON AIR NOW</div>`;
+    html += `<div class="popup-row"><b>${live.callsign||'?'}</b> on ${live.freq||'?'} ${live.mode||''}</div>`;
+    if(live.comment) html += `<div class="popup-row">${escapeHtml(live.comment)}</div>`;
+  }
+  extraRows.forEach(r => html += `<div class="popup-row">${r}</div>`);
+  if(link) html += `<div style="margin-top:6px;"><a class="popup-link" href="${link}" target="_blank" rel="noopener">View official page &rarr;</a></div>`;
+  return html;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function currentFilters(){
+  return {
+    pota: document.getElementById('chk-pota').checked,
+    sota: document.getElementById('chk-sota').checked,
+    wwff: document.getElementById('chk-wwff').checked,
+    state: document.getElementById('sel-state').value,
+    activatedOnly: document.getElementById('chk-activated-only').checked,
+    liveOnly: document.getElementById('chk-live-only').checked,
+    search: document.getElementById('search-box').value.trim().toUpperCase()
+  };
+}
+
+function rebuildMarkers(){
+  const f = currentFilters();
+  clusterPota.clearLayers();
+  clusterSota.clearLayers();
+  clusterWwff.clearLayers();
+  markersPota.clear();
+  markersSota.clear();
+  markersWwff.clear();
+
+  if(f.pota){
+    potaParks.forEach(p => {
+      if(f.state !== 'ALL' && p.state !== f.state) return;
+      if(f.activatedOnly && p.activations <= 0) return;
+      const live = liveSpots.pota.get(p.reference);
+      if(f.liveOnly && !live) return;
+      if(f.search && !(p.reference.toUpperCase().includes(f.search) || p.name.toUpperCase().includes(f.search))) return;
+      const marker = L.marker([p.lat, p.lon], { icon: makeDotIcon(live ? '#ff3b5c' : '#4caf7d', !!live) });
+      marker.bindPopup(() => popupHtml('pota', p.reference));
+      clusterPota.addLayer(marker);
+      markersPota.set(p.reference, marker);
+    });
+  }
+
+  if(f.sota){
+    sotaSummits.forEach(s => {
+      if(f.state !== 'ALL' && s.state !== f.state) return;
+      if(f.activatedOnly && s.activationCount <= 0) return;
+      const live = liveSpots.sota.get(s.code);
+      if(f.liveOnly && !live) return;
+      if(f.search && !(s.code.toUpperCase().includes(f.search) || s.name.toUpperCase().includes(f.search))) return;
+      const marker = L.marker([s.lat, s.lon], { icon: makeDotIcon(live ? '#ff3b5c' : '#ff8c42', !!live) });
+      marker.bindPopup(() => popupHtml('sota', s.code));
+      clusterSota.addLayer(marker);
+      markersSota.set(s.code, marker);
+    });
+  }
+
+  // WWFF layer intentionally left empty until a reliable data source is wired up.
+}
+
+// ---------- Search ----------
+function focusSearchResult(){
+  const f = currentFilters();
+  if(!f.search) return;
+  let target = null;
+  for(const [ref, m] of markersPota) if(ref.toUpperCase().includes(f.search)) { target = m; break; }
+  if(!target) for(const [ref, m] of markersSota) if(ref.toUpperCase().includes(f.search)) { target = m; break; }
+  if(target){
+    map.setView(target.getLatLng(), 10);
+    target.openPopup();
+  }
+}
+
+// ---------- State dropdown population ----------
+function populateStateDropdown(){
+  const sel = document.getElementById('sel-state');
+  Object.keys(VK_STATE_LABELS).forEach(code => {
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = `${code} - ${VK_STATE_LABELS[code]}`;
+    sel.appendChild(opt);
+  });
+}
+
+// ---------- Wire up controls ----------
+['chk-pota','chk-sota','chk-wwff','sel-state','chk-activated-only','chk-live-only'].forEach(id => {
+  document.getElementById(id).addEventListener('change', rebuildMarkers);
+});
+document.getElementById('search-box').addEventListener('input', () => { rebuildMarkers(); });
+document.getElementById('search-box').addEventListener('keydown', e => { if(e.key === 'Enter') focusSearchResult(); });
+document.getElementById('btn-refresh-spots').addEventListener('click', refreshAllSpots);
+
+// ---------- Init sequence ----------
+(async function init(){
+  populateStateDropdown();
+  try{
+    setLoading(true, 'Loading POTA park list...');
+    await loadPotaParks();
+    setLoading(true, 'Loading SOTA summit list...');
+    await loadSotaSummits();
+    setLoading(true, 'Checking WWFF data source...');
+    await loadWwffRefs();
+    setLoading(true, 'Fetching live activations...');
+    await refreshAllSpots();
+    rebuildMarkers();
+  }catch(err){
+    showError('Initialisation failed: ' + err.message);
+  }finally{
+    setLoading(false);
+  }
+  // Auto-refresh live spots every 5 minutes
+  setInterval(refreshAllSpots, 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>

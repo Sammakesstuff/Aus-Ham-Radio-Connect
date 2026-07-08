@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aus Ham Radio Connect</title>
+    <a href="https://hackclub.com/"><img style="position: absolute; top: 0; left: 10px; border: 0; width: 256px; z-index: 999;" src="https://assets.hackclub.com/flag-orpheus-top.svg" alt="Hack Club"/></a>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: monospace; padding: 2rem; margin: 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .card { background: #161b22; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #30363d; }
+        .map-card { grid-column: span 2; }
+        #aprs-map { height: 450px; width: 100%; border-radius: 0.375rem; margin-top: 1rem; background: #010409; border: 1px solid #30363d; }
+        h1 { color: #ec4899; margin-top: 0; text-shadow: 0 0 10px rgba(236, 72, 153, 0.3); }
+        h3 { margin-top: 0; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 0.5rem; }
+        input { background: #0d1117; border: 1px solid #30363d; color: #f0f6fc; padding: 0.5rem; border-radius: 0.25rem; text-transform: uppercase; font-family: monospace; }
+        button { background: #ec4899; border: none; color: white; font-weight: bold; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-family: monospace; }
+        button:hover { background: #db2777; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Streaming Data Interfaces */
+        .traffic-log { font-family: monospace; background: #0d1117; padding: 0.75rem; border-radius: 0.375rem; height: 110px; overflow-y: auto; font-size: 0.85rem; border: 1px solid #30363d; }
+        .log-entry { margin-bottom: 0.25rem; border-left: 3px solid #ec4899; padding-left: 0.5rem; }
+        .entry-time { color: #8b949e; margin-right: 0.5rem; }
+        .entry-call { color: #58a6ff; font-weight: bold; }
+        .entry-data { color: #a7f3d0; }
+
+        /* Space Weather Layout elements */
+        .wx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem; margin-bottom: 1rem; }
+        .wx-val { color: #eab308; font-weight: bold; }
+        .solar-banner img { max-width: 100%; border: 1px solid #30363d; border-radius: 0.25rem; }
+
+        /* Hack Club Stardust Indicator styles */
+        .status-badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; background: #21262d; color: #ec4899; border: 1px solid #30363d; }
+
+        /* Schedulers & Grid UI Links */
+        .grid-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem; }
+        .grid-link { color: #58a6ff; text-decoration: none; border: 1px solid #30363d; padding: 0.55rem; border-radius: 0.25rem; background: #0d1117; text-align: center; }
+        .grid-link:hover { background: #21262d; border-color: #58a6ff; }
+
+        /* Interactive Phonetic Alphabet Grid Styles */
+        .alpha-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 0.5rem; margin-top: 1rem; }
+        .alpha-box { background: #0d1117; border: 1px solid #30363d; border-radius: 0.375rem; padding: 0.5rem; text-align: center; position: relative; cursor: crosshair; transition: all 0.2s ease; overflow: visible; }
+        .alpha-letter { font-size: 1.25rem; font-weight: bold; color: #58a6ff; }
+        .alpha-popup { display: none; position: absolute; bottom: 115%; left: 50%; transform: translateX(-50%); background: #1f242c; border: 1px solid #ec4899; padding: 0.5rem; border-radius: 0.25rem; width: 130px; box-shadow: 0 0 15px rgba(236, 72, 153, 0.4); z-index: 100; pointer-events: none; }
+        .alpha-popup::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: #ec4899 transparent transparent transparent; }
+        .popup-word { font-weight: bold; color: #f0f6fc; font-size: 0.85rem; margin-bottom: 0.15rem; text-transform: uppercase; }
+        .popup-voice { color: #eab308; font-size: 0.75rem; font-style: italic; }
+        .alpha-box:hover { border-color: #ec4899; background: #161b22; transform: translateY(-2px); }
+        .alpha-box:hover .alpha-popup { display: block; }
+
+        /* Grid Locator + warning styles */
+        .warning-note { color: #eab308; font-size: 0.75rem; margin-top: 0.5rem; border-top: 1px dashed #30363d; padding-top: 0.5rem; }
+        .locator-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        .locator-row input { flex: 1; min-width: 80px; text-transform: none; }
+        .locator-output { font-size: 1.5rem; color: #eab308; font-weight: bold; margin-top: 0.5rem; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Aus Ham Radio Connect // HackClub Stardance Terminal</h1>
+    <p style="color: #8b949e; margin-bottom: 2rem;">Live HF Propagation Matrix, DMR Tickers & APRS Node Tracker</p>
+
+    <div class="grid">
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; grid-column: span 2;">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <h3>APRS Map Tracker</h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button id="toggle-grid-btn" style="background: #21262d; border: 1px solid #30363d; color: #c9d1d9;">Toggle Grid</button>
+                        <button id="toggle-greyline-btn" style="background: #21262d; border: 1px solid #30363d; color: #c9d1d9;">Toggle Greyline</button>
+                        <input type="text" id="callsign-input" placeholder="VK3RHD-1">
+                        <button id="search-btn">Track Station</button>
+                    </div>
+                </div>
+                <div id="aprs-map"></div>
+                <div class="warning-note">⚠️ APRS.fi lookups use a demo API key hardcoded in this page's client-side JS — visible to anyone who views source. Fine for personal/local use, but swap in your own key (or proxy it server-side) before sharing this file publicly.</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0; border: none;">🥧 Pi-Star Hotspot Status</h3>
+                        <span class="status-badge" id="pistar-status" style="color:#a7f3d0; border-color:#30363d;">Online</span>
+                    </div>
+                    <div class="traffic-log" id="pistar-log">
+                        <div class="log-entry"><span class="entry-time">[System]</span> Local hotspot listener active. Awaiting voice transport packet logs...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Terminal Chronometer</h3>
+                    <div style="font-size: 1.5rem; color: #eab308; font-weight: bold; margin: 0.5rem 0;" id="utc-clock">00:00:00 UTC</div>
+                    <p style="color: #8b949e; font-size: 0.8rem; margin: 0;">Standard operation synchronization time.</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">🗺️ Radio Mapping Directories</h3>
+                    <div class="grid-matrix">
+                        <a href="http://127.0.0.1:5500/repeater_map_dashboard.html" target="_blank" class="grid-link">VK Repeater Map</a>
+                        <a href="http://127.0.0.1:5500/wia_club_map.html" target="_blank" class="grid-link">WIA Club Map</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>CW Morse Generator</h3>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" id="cw-input" placeholder="VK3..." style="width: 100%;">
+                        <button id="cw-btn">Convert</button>
+                    </div>
+                    <div id="cw-output" style="color: #a7f3d0; font-family: monospace; min-height: 20px; font-size: 1.1rem; letter-spacing: 2px;"></div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">📍 Maidenhead Grid Locator</h3>
+                    <div class="locator-row">
+                        <input type="text" id="loc-lat" placeholder="Lat (-27.47)">
+                        <input type="text" id="loc-lon" placeholder="Lon (153.02)">
+                        <button id="loc-calc-btn">Calc</button>
+                    </div>
+                    <button id="loc-geo-btn" style="width: 100%; background: #21262d; border: 1px solid #30363d; color: #c9d1d9;">📡 Use My Location</button>
+                    <div class="locator-output" id="loc-output">------</div>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0; border: none;">🏞️ POTA / SOTA Live Activations</h3>
+                        <span class="status-badge" style="color:#a7f3d0; border-color:#a7f3d0;">VK Filtered</span>
+                    </div>
+                    <div class="traffic-log" id="pota-log">
+                        <div class="log-entry"><span class="entry-time">[System]</span> Polling Parks/Summits on the Air spot feeds...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0; border: none;">📻 NCDXF/IARU Beacon Tracker</h3>
+                        <span class="status-badge" style="color:#58a6ff; border-color:#58a6ff;">Live Calc</span>
+                    </div>
+                    <div style="font-size: 1.1rem; color: #f0f6fc; margin-bottom: 0.25rem;">Now: <span id="beacon-call" style="color:#eab308; font-weight:bold;">--</span></div>
+                    <div style="font-size: 0.9rem; color: #8b949e;">Band: <span id="beacon-band" class="wx-val">--</span> | Next in <span id="beacon-countdown" class="wx-val">--</span>s</div>
+                    <p style="color: #8b949e; font-size: 0.75rem; margin: 0.5rem 0 0;">18-beacon global network, 10s slots per band, 15 min full cycle. Calculated locally from UTC — no API required.</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">📏 Antenna Length Calculator</h3>
+                    <div class="locator-row">
+                        <input type="text" id="ant-freq" placeholder="Freq (MHz) e.g. 7.1">
+                        <button id="ant-calc-btn">Calc</button>
+                    </div>
+                    <div id="ant-output" style="font-size: 0.9rem; line-height: 1.6; color: #a7f3d0;">
+                        Dipole (½λ): --<br>
+                        Vertical (¼λ): --
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">🏆 Recurring VK Contest Calendar</h3>
+                    <div style="font-size: 0.85rem; line-height: 1.8; color: #c9d1d9;">
+                        <div>🗓️ <b>VK Sprint</b> — periodic, evenings (check WIA calendar)</div>
+                        <div>🗓️ <b>Ross Hull Contest</b> — Jun–Jul, VHF/UHF</div>
+                        <div>🗓️ <b>Remembrance Day Contest (RD)</b> — mid-August</div>
+                        <div>🗓️ <b>John Moyle Field Day</b> — March</div>
+                        <div>🗓️ <b>Oceania DX Contest</b> — October</div>
+                    </div>
+                    <a href="https://www.wia.org.au/members/contests/" target="_blank" class="grid-link" style="display:block; margin-top:0.75rem;">Full WIA Contest Calendar ↗</a>
+                    <p style="color: #8b949e; font-size: 0.7rem; margin: 0.5rem 0 0;">Dates are indicative — confirm exact weekends on the WIA site each year.</p>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0; border: none;"> WICEN / Emergency Net</h3>
+                        <span class="status-badge" style="color:#ec4899; border-color:#ec4899;">Reference</span>
+                    </div>
+                    <p style="font-size: 0.85rem; line-height: 1.6; color: #c9d1d9; margin: 0 0 0.75rem;">
+                        WICEN (Wireless Institute Civil Emergency Network) coordinates amateur radio volunteers during bushfires, floods, and other declared emergencies across VK states.
+                    </p>
+                    <div class="grid-matrix">
+                        <a href="https://www.wia.org.au/members/wicen/" target="_blank" class="grid-link">WIA WICEN Info</a>
+                        <a href="https://www.emergency.qld.gov.au/" target="_blank" class="grid-link">QLD Emergency</a>
+                    </div>
+                    <p style="color: #8b949e; font-size: 0.7rem; margin: 0.75rem 0 0;">Always follow your local WICEN group and RFS/SES for activation status — this card is reference only, not a live feed.</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;"> SWR / Return Loss Calculator</h3>
+                    <div class="locator-row">
+                        <input type="text" id="swr-fwd" placeholder="Fwd Power (W)">
+                        <input type="text" id="swr-ref" placeholder="Refl Power (W)">
+                        <button id="swr-calc-btn">Calc</button>
+                    </div>
+                    <div id="swr-output" style="font-size: 0.9rem; line-height: 1.6; color: #a7f3d0;">
+                        SWR: --<br>
+                        Return Loss: --<br>
+                        Mismatch Loss: --
+                    </div>
+                </div>
+                </div>
+
+                <div class="card">
+                    <h3>❓ Q-Code Quick Reference</h3>
+                    <div id="qcode-matrix" class="alpha-container"></div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;"> Sunrise / Sunset Calculator</h3>
+                    <div class="locator-row">
+                        <input type="text" id="sun-lat" placeholder="Lat (-27.47)">
+                        <input type="text" id="sun-lon" placeholder="Lon (153.02)">
+                        <button id="sun-calc-btn">Calc</button>
+                    </div>
+                    <div id="sun-output" style="font-size: 0.9rem; line-height: 1.6; color: #a7f3d0;">
+                        Sunrise: -- UTC<br>
+                        Sunset: -- UTC
+                    </div>
+                    <p style="color: #8b949e; font-size: 0.7rem; margin: 0.5rem 0 0;">Useful for planning grey-line DX windows on 40/80/160m.</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">📡 VK 2m / 70cm Band Plan Quick Ref</h3>
+                    <div style="font-size: 0.8rem; line-height: 1.7; color: #c9d1d9;">
+                        <div><b>2m FM Calling:</b> 146.500 MHz</div>
+                        <div><b>2m Repeaters:</b> 147.000–147.400 MHz (−600 kHz offset)</div>
+                        <div><b>2m Simplex:</b> 146.475–146.975 MHz</div>
+                        <div><b>70cm FM Calling:</b> 438.525 MHz</div>
+                        <div><b>70cm Repeaters:</b> 438–440 MHz (−5 MHz offset)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🗣️ Phonetic Alphabet Quick Reference</h3>
+                <div id="phonetic-matrix" class="alpha-container"></div>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="card">
+                <div class="solar-banner" style="text-align: center;">
+                    <a href="https://www.hamqsl.com/solar.html" title="Click to add Solar-Terrestrial Data to your website!"><img src="https://www.hamqsl.com/solarn0nbh.php" alt="Solar Data"></a>
+                </div>
+                <div class="wx-grid" id="solar-numeric-grid" style="margin-top: 1rem;">
+                    <div>Solar Flux: <span class="wx-val" id="wx-sfi">--</span></div>
+                    <div>Sunspots: <span class="wx-val" id="wx-sunspots">--</span></div>
+                    <div>A-Index: <span class="wx-val" id="wx-aindex">--</span></div>
+                    <div>K-Index: <span class="wx-val" id="wx-kindex">--</span></div>
+                    <div>X-Ray: <span class="wx-val" id="wx-xray">--</span></div>
+                    <div>VHF Cond: <span class="wx-val" id="wx-vhf">--</span></div>
+                </div>
+            </div>
+                  these cards are the ones that will be updated with live data from the feeds using// JavaScript and WebSocket connections or API polling.
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">🛰️ Satellite Pass Predictions</h3>
+                    <span class="status-badge" style="color:#eab308; border-color:#eab308;">Amsat Feed</span>
+                </div>
+                <div class="traffic-log" id="sat-log">
+                    <div class="log-entry"><span class="entry-time">[System]</span> Listening for live satellite telemetry metrics...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">📡 Live DX Cluster</h3>
+                    <span class="status-badge" style="color:#58a6ff; border-color:#58a6ff;">HF Spots</span>
+                </div>
+                <div class="traffic-log" id="dx-cluster-log">
+                    <div class="log-entry"><span class="entry-time">[System]</span> Tracking regional HF cluster nodes...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">Brandmeister DMR Network</h3>
+                    <span class="status-badge">TG 505 Stream</span>
+                </div>
+                <div class="traffic-log" id="bm-log">
+                    <div class="log-entry"><span class="entry-time">[System]</span> Connecting to Talkgroup 505 master node...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">Yaesu System Fusion</h3>
+                    <span class="status-badge">YSF Registry</span>
+                </div>
+                <div class="traffic-log" id="ysf-log">
+                    <div class="log-entry"><span class="entry-time">[System]</span> Reaching server registry...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">🌊 WSPR VK Spots</h3>
+                    <span class="status-badge" style="color:#a7f3d0; border-color:#a7f3d0;">wspr.live</span>
+                </div>
+                <div class="traffic-log" id="wspr-log">
+                    <div class="log-entry"><span class="entry-time">[System]</span> Querying recent WSPR reception reports...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 0.75rem;">🔊 Active Australian WebSDR Matrix</h3>
+                <div class="grid-matrix">
+                    <a href="http://vk4een.proxy.kiwisdr.com:8073/" target="_blank" class="grid-link">Brisbane SDR 1</a>
+                    <a href="http://sdrbris.proxy.kiwisdr.com:8073/" target="_blank" class="grid-link">Brisbane SDR 2</a>
+                    <a href="http://22537.proxy.kiwisdr.com:8073/" target="_blank" class="grid-link">Alternative SDR</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 0.75rem;">📡 Link Directory</h3>
+                <div class="grid-matrix">
+                    <a href="https://www.qrz.com/" target="_blank" class="grid-link">QRZ</a>
+                    <a href="https://www.google.com/search?q=ham+radio" target="_blank" class="grid-link">Ham Radio Google</a>
+                    <a href="https://aprs.fi" target="_blank" class="grid-link">APRS.fi</a>
+                    <a href="https://qrz.com/db/VK4AHA" target="_blank" class="grid-link">Sam's QRZ Page</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 0.75rem;">HAM Radio YouTube</h3>
+                <div class="grid-matrix">
+                    <a href="https://www.youtube.com/@HamRadioCrashCourse" target="_blank" class="grid-link">Ham Crash Course</a>
+                    <a href="https://www.youtube.com/@HamRadioDX" target="_blank" class="grid-link">Ham Radio DX 🦘</a>
+                    <a href="https://www.youtube.com/@DXCommanderHQ" target="_blank" class="grid-link">DX Commander 🐐</a>
+                    <a href="https://www.youtube.com/@temporarilyoffline" target="_blank" class="grid-link">Temp Offline</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+        // Synchronous Live UTC Clock Engine
+        function updateClock() {
+            const now = new Date();
+            const utcTime = now.toISOString().substr(11, 8);
+            document.getElementById('utc-clock').textContent = utcTime + " UTC";
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Phonetic dataset generation
+        const alphabetData = [
+            { L: 'A', W: 'Alpha', P: 'AL-FAH' }, { L: 'B', W: 'Bravo', P: 'BRAH-VOH' },
+            { L: 'C', W: 'Charlie', P: 'CHAR-LEE' }, { L: 'D', W: 'Delta', P: 'DELL-TAH' },
+            { L: 'E', W: 'Echo', P: 'ECK-OH' }, { L: 'F', W: 'Foxtrot', P: 'FOKS-TROT' },
+            { L: 'G', W: 'Golf', P: 'GOLF' }, { L: 'H', W: 'Hotel', P: 'HOH-TELL' },
+            { L: 'I', W: 'India', P: 'IN-DEE-AH' }, { L: 'J', W: 'Juliet', P: 'JEW-LEE-ETT' },
+            { L: 'K', W: 'Kilo', P: 'KEY-LOH' }, { L: 'L', W: 'Lima', P: 'LEE-MAH' },
+            { L: 'M', W: 'Mike', P: 'MIKE' }, { L: 'N', W: 'November', P: 'NOH-VEM-BER' },
+            { L: 'O', W: 'Oscar', P: 'OSS-CAH' }, { L: 'P', W: 'Papa', P: 'PAH-PAH' },
+            { L: 'Q', W: 'Quebec', P: 'KEH-BEC' }, { L: 'R', W: 'Romeo', P: 'ROW-ME-OH' },
+            { L: 'S', W: 'Sierra', P: 'SEE-AIR-RAH' }, { L: 'T', W: 'Tango', P: 'TANG-GO' },
+            { L: 'U', W: 'Uniform', P: 'YOU-NEE-FORM' }, { L: 'V', W: 'Victor', P: 'VIK-TAH' },
+            { L: 'W', W: 'Whiskey', P: 'WISS-KEY' }, { L: 'X', W: 'X-ray', P: 'ECKS-RAY' },
+            { L: 'Y', W: 'Yankee', P: 'YANG-KEY' }, { L: 'Z', W: 'Zulu', P: 'ZOO-LOO' }
+        ];
+
+        const matrixContainer = document.getElementById('phonetic-matrix');
+        if (matrixContainer) {
+            matrixContainer.innerHTML = '';
+            alphabetData.forEach(item => {
+                const box = document.createElement('div');
+                box.className = 'alpha-box';
+                box.innerHTML = `
+                    <div class="alpha-letter">${item.L}</div>
+                    <div class="alpha-popup">
+                        <div class="popup-word">${item.W}</div>
+                        <div class="popup-voice">[${item.P}]</div>
+                    </div>
+                `;
+                matrixContainer.appendChild(box);
+            });
+        }
+
+        // Q-Code dataset generation
+        const qcodeData = [
+            { L: 'QRZ', W: 'Who is calling?', P: 'Also: "you are being called by..."' },
+            { L: 'QRM', W: 'Interference', P: 'Man-made / other stations' },
+            { L: 'QRN', W: 'Static noise', P: 'Natural / atmospheric' },
+            { L: 'QSB', W: 'Fading signal', P: 'Signal strength varying' },
+            { L: 'QSO', W: 'A contact', P: 'Conversation with a station' },
+            { L: 'QSY', W: 'Change frequency', P: 'Move to another freq' },
+            { L: 'QTH', W: 'Location', P: 'Your station location' },
+            { L: 'QRP', W: 'Low power', P: 'Typically ≤5W' },
+            { L: 'QRO', W: 'High power', P: 'Increase transmit power' },
+            { L: 'QSL', W: 'Confirm receipt', P: 'Acknowledge / confirm' },
+            { L: 'QRT', W: 'Stop transmitting', P: 'Shutting down station' },
+            { L: 'QRV', W: 'Ready to operate', P: 'Available for contact' }
+        ];
+
+        const qcodeContainer = document.getElementById('qcode-matrix');
+        if (qcodeContainer) {
+            qcodeContainer.innerHTML = '';
+            qcodeData.forEach(item => {
+                const box = document.createElement('div');
+                box.className = 'alpha-box';
+                box.style.minWidth = '85px';
+                box.innerHTML = `
+                    <div class="alpha-letter" style="font-size: 0.95rem;">${item.L}</div>
+                    <div class="alpha-popup" style="width: 170px;">
+                        <div class="popup-word">${item.W}</div>
+                        <div class="popup-voice">${item.P}</div>
+                    </div>
+                `;
+                qcodeContainer.appendChild(box);
+            });
+        }
+
+        // Morse Translation Code logic
+        const morseCodeMap = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 'G': '--.', 'H': '....',
+            'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---', 'P': '.--.',
+            'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', '3': '...--', '4': '....-', '5': '.....',
+            '6': '-....', '7': '--...', '8': '---..', '9': '----.', '0': '-----'
+        };
+
+        document.getElementById('cw-btn').addEventListener('click', () => {
+            const text = document.getElementById('cw-input').value.trim().toUpperCase();
+            const output = text.split('').map(char => morseCodeMap[char] || (char === ' ' ? '/' : '')).join(' ');
+            document.getElementById('cw-output').textContent = output || 'Invalid Input';
+        });
+
+        // --- Maidenhead Grid Locator ---
+        function latLonToGrid(lat, lon) {
+            lat = parseFloat(lat); lon = parseFloat(lon);
+            if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+            lon += 180; lat += 90;
+            const A = Math.floor(lon / 20);
+            const B = Math.floor(lat / 10);
+            lon %= 20; lat %= 10;
+            const C = Math.floor(lon / 2);
+            const D = Math.floor(lat / 1);
+            lon = (lon - 2 * C) * 60; lat = (lat - D) * 60;
+            const E = Math.floor(lon / 5);
+            const F = Math.floor(lat / 2.5);
+            return String.fromCharCode(65 + A) + String.fromCharCode(65 + B) + C + D +
+                   String.fromCharCode(97 + E) + String.fromCharCode(97 + F);
+        }
+
+        document.getElementById('loc-calc-btn').addEventListener('click', () => {
+            const lat = document.getElementById('loc-lat').value.trim();
+            const lon = document.getElementById('loc-lon').value.trim();
+            const grid = latLonToGrid(lat, lon);
+            document.getElementById('loc-output').textContent = grid ? grid.toUpperCase() : 'Invalid coords';
+        });
+
+        document.getElementById('loc-geo-btn').addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                document.getElementById('loc-output').textContent = 'No geolocation';
+                return;
+            }
+            document.getElementById('loc-output').textContent = 'Locating...';
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    document.getElementById('loc-lat').value = latitude.toFixed(4);
+                    document.getElementById('loc-lon').value = longitude.toFixed(4);
+                    const grid = latLonToGrid(latitude, longitude);
+                    document.getElementById('loc-output').textContent = grid ? grid.toUpperCase() : 'Calc error';
+                },
+                () => { document.getElementById('loc-output').textContent = 'Permission denied'; }
+            );
+        });
+
+        // --- NCDXF/IARU Beacon Tracker (fully local calculation, no API) ---
+        const beaconOrder = [
+            '4U1UN', 'VE8AT', 'W6WX', 'KH6WO', 'ZL6B', 'VK6RBP', 'JA2IGY', 'RR9O',
+            'VR2B', '4S7B', 'ZS6DN', '5Z4B', '4X6TU', 'OH2B', 'CS3B', 'LU4AA', 'OA4B', 'YV5B'
+        ];
+        const beaconBands = ['14.100 MHz', '18.110 MHz', '21.150 MHz', '24.930 MHz', '28.200 MHz'];
+
+        function updateBeaconTracker() {
+            const nowSec = Math.floor(Date.now() / 1000);
+            const cyclePos = nowSec % 900; // 18 beacons * 50s = 900s full cycle
+            const beaconIndex = Math.floor(cyclePos / 50);
+            const withinBeacon = cyclePos % 50;
+            const bandIndex = Math.floor(withinBeacon / 10);
+            const secondsIntoSlot = withinBeacon % 10;
+            const countdown = 10 - secondsIntoSlot;
+
+            const callEl = document.getElementById('beacon-call');
+            const bandEl = document.getElementById('beacon-band');
+            const cdEl = document.getElementById('beacon-countdown');
+            if (callEl) callEl.textContent = beaconOrder[beaconIndex] || '--';
+            if (bandEl) bandEl.textContent = beaconBands[bandIndex] || '--';
+            if (cdEl) cdEl.textContent = countdown;
+        }
+        setInterval(updateBeaconTracker, 1000);
+        updateBeaconTracker();
+
+        // --- Antenna Length Calculator ---
+        document.getElementById('ant-calc-btn').addEventListener('click', () => {
+            const freq = parseFloat(document.getElementById('ant-freq').value);
+            const outputEl = document.getElementById('ant-output');
+            if (!freq || freq <= 0) {
+                outputEl.innerHTML = 'Enter a valid frequency in MHz';
+                return;
+            }
+            const dipoleFt = 468 / freq;
+            const verticalFt = 234 / freq;
+            const dipoleM = dipoleFt * 0.3048;
+            const verticalM = verticalFt * 0.3048;
+            outputEl.innerHTML = `
+                Dipole (½λ): ${dipoleFt.toFixed(2)} ft / ${dipoleM.toFixed(2)} m (${(dipoleFt/2).toFixed(2)} ft per leg)<br>
+                Vertical (¼λ): ${verticalFt.toFixed(2)} ft / ${verticalM.toFixed(2)} m
+            `;
+        });
+
+        // --- SWR / Return Loss Calculator ---
+        document.getElementById('swr-calc-btn').addEventListener('click', () => {
+            const fwd = parseFloat(document.getElementById('swr-fwd').value);
+            const refl = parseFloat(document.getElementById('swr-ref').value);
+            const outputEl = document.getElementById('swr-output');
+            if (!fwd || fwd <= 0 || isNaN(refl) || refl < 0 || refl >= fwd) {
+                outputEl.innerHTML = 'Enter valid Fwd &gt; Refl &ge; 0';
+                return;
+            }
+            const rho = Math.sqrt(refl / fwd);
+            const swr = (1 + rho) / (1 - rho);
+            const returnLossDb = -20 * Math.log10(rho);
+            const mismatchLossDb = -10 * Math.log10(1 - (rho * rho));
+            outputEl.innerHTML = `
+                SWR: ${swr.toFixed(2)}:1<br>
+                Return Loss: ${returnLossDb.toFixed(2)} dB<br>
+                Mismatch Loss: ${mismatchLossDb.toFixed(2)} dB
+            `;
+        });
+
+        // --- Sunrise / Sunset Calculator (classic Sunrise Equation almanac algorithm) ---
+        function calcSunUTC(lat, lon, isSunrise) {
+            const rad = Math.PI / 180;
+            const now = new Date();
+            const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 0));
+            const dayOfYear = Math.floor((now - start) / 86400000);
+            const zenith = 90.833;
+            const lngHour = lon / 15;
+            const t = isSunrise ? dayOfYear + ((6 - lngHour) / 24) : dayOfYear + ((18 - lngHour) / 24);
+            const M = (0.9856 * t) - 3.289;
+            let L = M + (1.916 * Math.sin(M * rad)) + (0.020 * Math.sin(2 * M * rad)) + 282.634;
+            L = ((L % 360) + 360) % 360;
+            let RA = (1 / rad) * Math.atan(0.91764 * Math.tan(L * rad));
+            RA = ((RA % 360) + 360) % 360;
+            const Lquadrant = Math.floor(L / 90) * 90;
+            const RAquadrant = Math.floor(RA / 90) * 90;
+            RA = (RA + (Lquadrant - RAquadrant)) / 15;
+            const sinDec = 0.39782 * Math.sin(L * rad);
+            const cosDec = Math.cos(Math.asin(sinDec));
+            const cosH = (Math.cos(zenith * rad) - (sinDec * Math.sin(lat * rad))) / (cosDec * Math.cos(lat * rad));
+            if (cosH > 1 || cosH < -1) return null;
+            let H = isSunrise ? 360 - (1 / rad) * Math.acos(cosH) : (1 / rad) * Math.acos(cosH);
+            H = H / 15;
+            const T = H + RA - (0.06571 * t) - 6.622;
+            let UT = ((T - lngHour) % 24 + 24) % 24;
+            const hh = Math.floor(UT);
+            const mm = Math.round((UT - hh) * 60);
+            return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+        }
+
+        document.getElementById('sun-calc-btn').addEventListener('click', () => {
+            const lat = parseFloat(document.getElementById('sun-lat').value);
+            const lon = parseFloat(document.getElementById('sun-lon').value);
+            const outputEl = document.getElementById('sun-output');
+            if (isNaN(lat) || isNaN(lon)) {
+                outputEl.innerHTML = 'Enter valid lat/lon';
+                return;
+            }
+            const sunrise = calcSunUTC(lat, lon, true);
+            const sunset = calcSunUTC(lat, lon, false);
+            outputEl.innerHTML = `
+                Sunrise: ${sunrise ? sunrise + ' UTC' : 'Sun does not rise today'}<br>
+                Sunset: ${sunset ? sunset + ' UTC' : 'Sun does not set today'}
+            `;
+        });
+
+        // Leaflet Engine setup
+        const map = L.map('aprs-map').setView([-27.0, 137.0], 4);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
+        let trackingMarker = null;
+        let gridLayerGroup = L.layerGroup();
+        let gridVisible = false;
+
+        function drawMaidenheadGrid() {
+            gridLayerGroup.clearLayers();
+            for (let lon = 100; lon <= 160; lon += 2) {
+                L.polyline([[-45, lon], [-9, lon]], {color: '#30363d', weight: 1}).addTo(gridLayerGroup);
+            }
+            for (let lat = -46; lat <= -10; lat += 1) {
+                L.polyline([[lat, 100], [lat, 160]], {color: '#30363d', weight: 1}).addTo(gridLayerGroup);
+            }
+        }
+        drawMaidenheadGrid();
+
+        document.getElementById('toggle-grid-btn').addEventListener('click', () => {
+            if (gridVisible) {
+                map.removeLayer(gridLayerGroup);
+                document.getElementById('toggle-grid-btn').style.borderColor = '#30363d';
+            } else {
+                map.addLayer(gridLayerGroup);
+                document.getElementById('toggle-grid-btn').style.borderColor = '#ec4899';
+            }
+            gridVisible = !gridVisible;
+        });
+
+        // --- Day/Night Greyline Overlay ---
+        let greylineLayerGroup = L.layerGroup();
+        let greylineVisible = false;
+
+        function computeTerminatorPoints(date) {
+            const rad = Math.PI / 180;
+            const startOfYear = new Date(Date.UTC(date.getUTCFullYear(), 0, 0));
+            const dayOfYear = Math.floor((date - startOfYear) / 86400000);
+            const decl = -23.44 * Math.cos(rad * (360 / 365) * (dayOfYear + 10));
+            const declRad = decl * rad;
+            const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60;
+            const points = [];
+            for (let lon = -180; lon <= 180; lon += 2) {
+                const hourAngle = 15 * (utcHours - 12) + lon;
+                const haRad = hourAngle * rad;
+                let lat;
+                if (Math.abs(Math.tan(declRad)) < 1e-6) {
+                    lat = 0;
+                } else {
+                    lat = Math.atan(-Math.cos(haRad) / Math.tan(declRad)) / rad;
+                }
+                points.push([lat, lon]);
+            }
+            return points;
+        }
+
+        function drawGreyline() {
+            greylineLayerGroup.clearLayers();
+            const points = computeTerminatorPoints(new Date());
+            L.polyline(points, { color: '#eab308', weight: 2, dashArray: '6, 6', opacity: 0.8 }).addTo(greylineLayerGroup);
+        }
+        drawGreyline();
+        setInterval(() => { if (greylineVisible) drawGreyline(); }, 5 * 60 * 1000);
+
+        document.getElementById('toggle-greyline-btn').addEventListener('click', () => {
+            if (greylineVisible) {
+                map.removeLayer(greylineLayerGroup);
+                document.getElementById('toggle-greyline-btn').style.borderColor = '#30363d';
+            } else {
+                drawGreyline();
+                map.addLayer(greylineLayerGroup);
+                document.getElementById('toggle-greyline-btn').style.borderColor = '#eab308';
+            }
+            greylineVisible = !greylineVisible;
+        });
+
+        // Logger helper
+        function logUpdate(elementId, callsign, details) {
+            const block = document.getElementById(elementId);
+            if (!block) return;
+            const logHTML = `<div class="log-entry"><span class="entry-time">[${new Date().toISOString().substr(11, 8)}]</span><span class="entry-call">${callsign}</span> - <span class="entry-data">${details}</span></div>`;
+            block.innerHTML = logHTML + block.innerHTML;
+            if (block.children.length > 15) block.removeChild(block.lastChild);
+        }
+
+        // --- AUTHENTIC LIVE API CONNECTIONS VIA STABLE PROXY HUB ---
+        const proxyPrefix = "https://corsproxy.io/?";
+
+        async function fetchSatellitePasses() {
+            // Authentic ISS tracking coordinates
+            const url = `${proxyPrefix}https://api.wheretheiss.at/v1/satellites/25544`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data && data.latitude) {
+                    logUpdate('sat-log', 'ISS (NORAD 25544)', `Lat: ${parseFloat(data.latitude).toFixed(4)} | Lon: ${parseFloat(data.longitude).toFixed(4)} | Alt: ${parseFloat(data.altitude).toFixed(1)} km`);
+                }
+            } catch (err) {
+                logUpdate('sat-log', '[ERR]', 'Amsat tracker connection state timed out.');
+            }
+        }
+
+        async function fetchBrandmeisterDMR() {
+            // Fixed correct LastHeard API Endpoint layout
+            const url = `${proxyPrefix}https://api.brandmeister.network/v1.1/lh/talkgroup/505`;
+            try {
+                const res = await fetch(url);
+                const entries = await res.json();
+                if (entries && entries.length > 0) {
+                    entries.slice(0, 3).forEach(record => {
+                        logUpdate('bm-log', record.sourceCallsign, `Talkgroup 505 active via ${record.hardware || 'DMR'}`);
+                    });
+                }
+            } catch (err) {
+                logUpdate('bm-log', '[ERR]', 'DMR Network transport dropped.');
+            }
+        }
+
+        async function fetchSystemFusionRegistry() {
+            const url = `${proxyPrefix}https://www.ysfreflector.de/api/list.php`;
+            try {
+                const res = await fetch(url);
+                const nodes = await res.json();
+                if (nodes && nodes.length > 0) {
+                    const ausNodes = nodes.filter(node =>
+                        node.name.toUpperCase().includes('AUS') ||
+                        node.description.toUpperCase().includes('AUSTRALIA')
+                    ).slice(0, 2);
+                    ausNodes.forEach(node => {
+                        logUpdate('ysf-log', node.name.substr(0, 10), `Users: ${node.users || 0} (${node.description.substr(0, 20)})`);
+                    });
+                }
+            } catch (err) {
+                logUpdate('ysf-log', '[ERR]', 'YSF Master servers blocking handshake.');
+            }
+        }
+
+        async function fetchLiveDXCluster() {
+            // Real DX cluster aggregator source
+            const url = `${proxyPrefix}https://auroras.live/api/v1/dx.php`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                if (data && data.dx && data.dx.length > 0) {
+                    data.dx.slice(0, 3).forEach(spot => {
+                        logUpdate('dx-cluster-log', spot.dxcall, `Freq: ${spot.frequency} kHz | De: ${spot.call}`);
+                    });
+                }
+            } catch (err) {
+                logUpdate('dx-cluster-log', '[ERR]', 'DX Spot cluster down or throttling.');
+            }
+        }
+
+        // --- WSPR VK Spots (wspr.live public ClickHouse query endpoint) ---
+        async function fetchWSPRSpots() {
+            const wsprQuery = "SELECT tx_sign, rx_sign, freq, snr, time FROM wspr.rx WHERE tx_sign LIKE 'VK%' ORDER BY time DESC LIMIT 5 FORMAT JSON";
+            const url = `${proxyPrefix}https://db1.wspr.live/?query=${encodeURIComponent(wsprQuery)}`;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const rows = data && data.data ? data.data : [];
+                if (rows.length > 0) {
+                    rows.slice(0, 3).forEach(row => {
+                        logUpdate('wspr-log', row.tx_sign, `Heard by ${row.rx_sign} | ${row.freq} Hz | SNR ${row.snr} dB`);
+                    });
+                } else {
+                    logUpdate('wspr-log', '[WSPR]', 'No recent VK WSPR reports found.');
+                }
+            } catch (err) {
+                logUpdate('wspr-log', '[ERR]', 'wspr.live query unreachable.');
+            }
+        }
+
+        // --- Numeric Space Weather Readout (parses hamqsl.com XML feed) ---
+        async function fetchSpaceWeatherNumeric() {
+            const url = `${proxyPrefix}https://www.hamqsl.com/solarxml.php`;
+            try {
+                const res = await fetch(url);
+                const text = await res.text();
+                const xml = new DOMParser().parseFromString(text, 'text/xml');
+                const getTag = (name) => {
+                    const el = xml.getElementsByTagName(name)[0];
+                    return el ? el.textContent : '--';
+                };
+                document.getElementById('wx-sfi').textContent = getTag('solarflux');
+                document.getElementById('wx-sunspots').textContent = getTag('sunspots');
+                document.getElementById('wx-aindex').textContent = getTag('aindex');
+                document.getElementById('wx-kindex').textContent = getTag('kindex');
+                document.getElementById('wx-xray').textContent = getTag('xray');
+                document.getElementById('wx-vhf').textContent = getTag('vhfconditions') !== '--' ? getTag('vhfconditions') : getTag('calculatedvhfconditions');
+            } catch (err) {
+                ['wx-sfi','wx-sunspots','wx-aindex','wx-kindex','wx-xray','wx-vhf'].forEach(id => {
+                    document.getElementById(id).textContent = 'ERR';
+                });
+            }
+        }
+
+        // --- POTA & SOTA VK Spot Feeds ---
+        async function fetchPOTASpots() {
+            const url = `${proxyPrefix}https://api.pota.app/spot/activator`;
+            try {
+                const res = await fetch(url);
+                const spots = await res.json();
+                if (Array.isArray(spots)) {
+                    const vkSpots = spots.filter(s => (s.activator || '').toUpperCase().startsWith('VK')).slice(0, 3);
+                    vkSpots.forEach(s => {
+                        logUpdate('pota-log', s.activator, `POTA ${s.reference} | ${s.frequency} kHz ${s.mode || ''}`);
+                    });
+                    if (vkSpots.length === 0) {
+                        logUpdate('pota-log', '[POTA]', 'No active VK parks right now.');
+                    }
+                }
+            } catch (err) {
+                logUpdate('pota-log', '[ERR]', 'POTA spot feed unreachable.');
+            }
+        }
+
+        async function fetchSOTASpots() {
+            const url = `${proxyPrefix}https://api2.sota.org.uk/api/spots/60/all`;
+            try {
+                const res = await fetch(url);
+                const spots = await res.json();
+                if (Array.isArray(spots)) {
+                    const vkSpots = spots.filter(s => (s.associationCode || '').toUpperCase() === 'VK' || (s.callsign || '').toUpperCase().startsWith('VK')).slice(0, 3);
+                    vkSpots.forEach(s => {
+                        logUpdate('pota-log', s.callsign, `SOTA ${s.summitCode} | ${s.frequency} MHz ${s.mode || ''}`);
+                    });
+                }
+            } catch (err) {
+                logUpdate('pota-log', '[ERR]', 'SOTA spot feed unreachable.');
+            }
+        }
+
+        // Live APRS Tracker Database query
+        document.getElementById('search-btn').addEventListener('click', async () => {
+            const callsign = document.getElementById('callsign-input').value.trim().toUpperCase();
+            if (!callsign) return alert('Enter a target callsign');
+
+            const apiKey = '215889.nnmMKVUZjhC1x1L';
+            const url = `${proxyPrefix}https://api.aprs.fi/api/get?name=${callsign}&what=loc&format=json&apikey=${apiKey}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data && data.result === 'ok' && data.found > 0) {
+                    const entry = data.entries[0];
+                    const lat = parseFloat(entry.lat);
+                    const lng = parseFloat(entry.lng);
+
+                    if (trackingMarker) map.removeLayer(trackingMarker);
+                    trackingMarker = L.marker([lat, lng]).addTo(map);
+                    trackingMarker.bindPopup(`<b>${entry.name}</b><br>${entry.comment || 'Active Station'}`).openPopup();
+                    map.flyTo([lat, lng], 10);
+                } else {
+                    alert(`Station ${callsign} data not active on APRS IS mesh right now.`);
+                }
+            } catch (err) {
+                alert('APRS data pipeline failure.');
+            }
+        });
+
+        // Execution Loops
+        function initLiveFeeds() {
+            fetchSatellitePasses();
+            fetchBrandmeisterDMR();
+            fetchSystemFusionRegistry();
+            fetchLiveDXCluster();
+            fetchPOTASpots();
+            fetchSOTASpots();
+            fetchSpaceWeatherNumeric();
+            fetchWSPRSpots();
+        }
+
+        initLiveFeeds();
+        setInterval(fetchBrandmeisterDMR, 30000);
+        setInterval(fetchLiveDXCluster, 45000);
+        setInterval(fetchSatellitePasses, 60000);
+        setInterval(fetchSystemFusionRegistry, 90000);
+        setInterval(fetchPOTASpots, 60000);
+        setInterval(fetchSOTASpots, 75000);
+        setInterval(fetchSpaceWeatherNumeric, 600000);
+        setInterval(fetchWSPRSpots, 60000);
+    </script>
+</body>
+</html>
