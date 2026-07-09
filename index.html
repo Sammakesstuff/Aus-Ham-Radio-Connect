@@ -105,7 +105,7 @@
                 <div class="card">
                     <h3>CW Morse Generator</h3>
                     <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <input type="text" id="cw-input" placeholder="VK3..." style="width: 100%;">
+                        <input type="text" id="cw-input" placeholder="VK3...">
                         <button id="cw-btn">Convert</button>
                     </div>
                     <div id="cw-output" style="color: #a7f3d0; font-family: monospace; min-height: 20px; font-size: 1.1rem; letter-spacing: 2px;"></div>
@@ -169,7 +169,7 @@
 
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <h3 style="margin: 0; border: none;"> WICEN / Emergency Net</h3>
+                        <h3 style="margin: 0; border: none;">🚨 WICEN / Emergency Net</h3>
                         <span class="status-badge" style="color:#ec4899; border-color:#ec4899;">Reference</span>
                     </div>
                     <p style="font-size: 0.85rem; line-height: 1.6; color: #c9d1d9; margin: 0 0 0.75rem;">
@@ -183,7 +183,7 @@
                 </div>
 
                 <div class="card">
-                    <h3 style="margin-bottom: 0.75rem;"> SWR / Return Loss Calculator</h3>
+                    <h3 style="margin-bottom: 0.75rem;">📉 SWR / Return Loss Calculator</h3>
                     <div class="locator-row">
                         <input type="text" id="swr-fwd" placeholder="Fwd Power (W)">
                         <input type="text" id="swr-ref" placeholder="Refl Power (W)">
@@ -195,7 +195,6 @@
                         Mismatch Loss: --
                     </div>
                 </div>
-                </div>
 
                 <div class="card">
                     <h3>❓ Q-Code Quick Reference</h3>
@@ -203,7 +202,7 @@
                 </div>
 
                 <div class="card">
-                    <h3 style="margin-bottom: 0.75rem;"> Sunrise / Sunset Calculator</h3>
+                    <h3 style="margin-bottom: 0.75rem;">🌅 Sunrise / Sunset Calculator</h3>
                     <div class="locator-row">
                         <input type="text" id="sun-lat" placeholder="Lat (-27.47)">
                         <input type="text" id="sun-lon" placeholder="Lon (153.02)">
@@ -248,7 +247,7 @@
                     <div>VHF Cond: <span class="wx-val" id="wx-vhf">--</span></div>
                 </div>
             </div>
-                  these cards are the ones that will be updated with live data from the feeds using// JavaScript and WebSocket connections or API polling.
+
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <h3 style="margin: 0; border: none;">🛰️ Satellite Pass Predictions</h3>
@@ -336,10 +335,17 @@
         function updateClock() {
             const now = new Date();
             const utcTime = now.toISOString().substr(11, 8);
-            document.getElementById('utc-clock').textContent = utcTime + " UTC";
+            const clockEl = document.getElementById('utc-clock');
+            if (clockEl) clockEl.textContent = utcTime + " UTC";
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // Initialize Leaflet Map
+        const map = L.map('aprs-map').setView([-27.4700, 153.0210], 6); // Default View near South East QLD
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO'
+        }).addTo(map);
 
         // Phonetic dataset generation
         const alphabetData = [
@@ -384,7 +390,7 @@
             { L: 'QSO', W: 'A contact', P: 'Conversation with a station' },
             { L: 'QSY', W: 'Change frequency', P: 'Move to another freq' },
             { L: 'QTH', W: 'Location', P: 'Your station location' },
-            { L: 'QRP', W: 'Low power', P: 'Typically ≤5W' },
+            { L: 'QRP', W: 'Low power', P: 'Typically <=5W' },
             { L: 'QRO', W: 'High power', P: 'Increase transmit power' },
             { L: 'QSL', W: 'Confirm receipt', P: 'Acknowledge / confirm' },
             { L: 'QRT', W: 'Stop transmitting', P: 'Shutting down station' },
@@ -418,11 +424,14 @@
             '6': '-....', '7': '--...', '8': '---..', '9': '----.', '0': '-----'
         };
 
-        document.getElementById('cw-btn').addEventListener('click', () => {
-            const text = document.getElementById('cw-input').value.trim().toUpperCase();
-            const output = text.split('').map(char => morseCodeMap[char] || (char === ' ' ? '/' : '')).join(' ');
-            document.getElementById('cw-output').textContent = output || 'Invalid Input';
-        });
+        const cwBtn = document.getElementById('cw-btn');
+        if (cwBtn) {
+            cwBtn.addEventListener('click', () => {
+                const text = document.getElementById('cw-input').value.trim().toUpperCase();
+                const output = text.split('').map(char => morseCodeMap[char] || (char === ' ' ? '/' : '')).join(' ');
+                document.getElementById('cw-output').textContent = output || 'Invalid Input';
+            });
+        }
 
         // --- Maidenhead Grid Locator ---
         function latLonToGrid(lat, lon) {
@@ -441,32 +450,38 @@
                    String.fromCharCode(97 + E) + String.fromCharCode(97 + F);
         }
 
-        document.getElementById('loc-calc-btn').addEventListener('click', () => {
-            const lat = document.getElementById('loc-lat').value.trim();
-            const lon = document.getElementById('loc-lon').value.trim();
-            const grid = latLonToGrid(lat, lon);
-            document.getElementById('loc-output').textContent = grid ? grid.toUpperCase() : 'Invalid coords';
-        });
+        const locCalcBtn = document.getElementById('loc-calc-btn');
+        if (locCalcBtn) {
+            locCalcBtn.addEventListener('click', () => {
+                const lat = document.getElementById('loc-lat').value.trim();
+                const lon = document.getElementById('loc-lon').value.trim();
+                const grid = latLonToGrid(lat, lon);
+                document.getElementById('loc-output').textContent = grid ? grid.toUpperCase() : 'Invalid coords';
+            });
+        }
 
-        document.getElementById('loc-geo-btn').addEventListener('click', () => {
-            if (!navigator.geolocation) {
-                document.getElementById('loc-output').textContent = 'No geolocation';
-                return;
-            }
-            document.getElementById('loc-output').textContent = 'Locating...';
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const { latitude, longitude } = pos.coords;
-                    document.getElementById('loc-lat').value = latitude.toFixed(4);
-                    document.getElementById('loc-lon').value = longitude.toFixed(4);
-                    const grid = latLonToGrid(latitude, longitude);
-                    document.getElementById('loc-output').textContent = grid ? grid.toUpperCase() : 'Calc error';
-                },
-                () => { document.getElementById('loc-output').textContent = 'Permission denied'; }
-            );
-        });
+        const locGeoBtn = document.getElementById('loc-geo-btn');
+        if (locGeoBtn) {
+            locGeoBtn.addEventListener('click', () => {
+                if (!navigator.geolocation) {
+                    document.getElementById('loc-output').textContent = 'No geolocation';
+                    return;
+                }
+                document.getElementById('loc-output').textContent = 'Locating...';
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const { latitude, longitude } = pos.coords;
+                        document.getElementById('loc-lat').value = latitude.toFixed(4);
+                        document.getElementById('loc-lon').value = longitude.toFixed(4);
+                        const grid = latLonToGrid(latitude, longitude);
+                        document.getElementById('loc-output').textContent = grid ? grid.toUpperCase() : 'Calc error';
+                    },
+                    () => { document.getElementById('loc-output').textContent = 'Permission denied'; }
+                );
+            });
+        }
 
-        // --- NCDXF/IARU Beacon Tracker (fully local calculation, no API) ---
+        // --- NCDXF/IARU Beacon Tracker ---
         const beaconOrder = [
             '4U1UN', 'VE8AT', 'W6WX', 'KH6WO', 'ZL6B', 'VK6RBP', 'JA2IGY', 'RR9O',
             'VR2B', '4S7B', 'ZS6DN', '5Z4B', '4X6TU', 'OH2B', 'CS3B', 'LU4AA', 'OA4B', 'YV5B'
@@ -475,7 +490,7 @@
 
         function updateBeaconTracker() {
             const nowSec = Math.floor(Date.now() / 1000);
-            const cyclePos = nowSec % 900; // 18 beacons * 50s = 900s full cycle
+            const cyclePos = nowSec % 900; 
             const beaconIndex = Math.floor(cyclePos / 50);
             const withinBeacon = cyclePos % 50;
             const bandIndex = Math.floor(withinBeacon / 10);
@@ -493,370 +508,106 @@
         updateBeaconTracker();
 
         // --- Antenna Length Calculator ---
-        document.getElementById('ant-calc-btn').addEventListener('click', () => {
-            const freq = parseFloat(document.getElementById('ant-freq').value);
-            const outputEl = document.getElementById('ant-output');
-            if (!freq || freq <= 0) {
-                outputEl.innerHTML = 'Enter a valid frequency in MHz';
-                return;
-            }
-            const dipoleFt = 468 / freq;
-            const verticalFt = 234 / freq;
-            const dipoleM = dipoleFt * 0.3048;
-            const verticalM = verticalFt * 0.3048;
-            outputEl.innerHTML = `
-                Dipole (½λ): ${dipoleFt.toFixed(2)} ft / ${dipoleM.toFixed(2)} m (${(dipoleFt/2).toFixed(2)} ft per leg)<br>
-                Vertical (¼λ): ${verticalFt.toFixed(2)} ft / ${verticalM.toFixed(2)} m
-            `;
-        });
+        const antCalcBtn = document.getElementById('ant-calc-btn');
+        if (antCalcBtn) {
+            antCalcBtn.addEventListener('click', () => {
+                const freq = parseFloat(document.getElementById('ant-freq').value);
+                const outputEl = document.getElementById('ant-output');
+                if (!freq || freq <= 0) {
+                    outputEl.innerHTML = 'Enter a valid frequency in MHz';
+                    return;
+                }
+                const dipoleFt = 468 / freq;
+                const verticalFt = 234 / freq;
+                const dipoleM = dipoleFt * 0.3048;
+                const verticalM = verticalFt * 0.3048;
+                outputEl.innerHTML = `
+                    Dipole (½λ): ${dipoleFt.toFixed(2)} ft / ${dipoleM.toFixed(2)} m (${(dipoleFt/2).toFixed(2)} ft per leg)<br>
+                    Vertical (¼λ): ${verticalFt.toFixed(2)} ft / ${verticalM.toFixed(2)} m
+                `;
+            });
+        }
 
         // --- SWR / Return Loss Calculator ---
-        document.getElementById('swr-calc-btn').addEventListener('click', () => {
-            const fwd = parseFloat(document.getElementById('swr-fwd').value);
-            const refl = parseFloat(document.getElementById('swr-ref').value);
-            const outputEl = document.getElementById('swr-output');
-            if (!fwd || fwd <= 0 || isNaN(refl) || refl < 0 || refl >= fwd) {
-                outputEl.innerHTML = 'Enter valid Fwd &gt; Refl &ge; 0';
-                return;
-            }
-            const rho = Math.sqrt(refl / fwd);
-            const swr = (1 + rho) / (1 - rho);
-            const returnLossDb = -20 * Math.log10(rho);
-            const mismatchLossDb = -10 * Math.log10(1 - (rho * rho));
-            outputEl.innerHTML = `
-                SWR: ${swr.toFixed(2)}:1<br>
-                Return Loss: ${returnLossDb.toFixed(2)} dB<br>
-                Mismatch Loss: ${mismatchLossDb.toFixed(2)} dB
-            `;
-        });
+        const swrCalcBtn = document.getElementById('swr-calc-btn');
+        if (swrCalcBtn) {
+            swrCalcBtn.addEventListener('click', () => {
+                const fwd = parseFloat(document.getElementById('swr-fwd').value);
+                const ref = parseFloat(document.getElementById('swr-ref').value);
+                const outputEl = document.getElementById('swr-output');
 
-        // --- Sunrise / Sunset Calculator (classic Sunrise Equation almanac algorithm) ---
-        function calcSunUTC(lat, lon, isSunrise) {
-            const rad = Math.PI / 180;
-            const now = new Date();
-            const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 0));
-            const dayOfYear = Math.floor((now - start) / 86400000);
-            const zenith = 90.833;
-            const lngHour = lon / 15;
-            const t = isSunrise ? dayOfYear + ((6 - lngHour) / 24) : dayOfYear + ((18 - lngHour) / 24);
-            const M = (0.9856 * t) - 3.289;
-            let L = M + (1.916 * Math.sin(M * rad)) + (0.020 * Math.sin(2 * M * rad)) + 282.634;
-            L = ((L % 360) + 360) % 360;
-            let RA = (1 / rad) * Math.atan(0.91764 * Math.tan(L * rad));
-            RA = ((RA % 360) + 360) % 360;
-            const Lquadrant = Math.floor(L / 90) * 90;
-            const RAquadrant = Math.floor(RA / 90) * 90;
-            RA = (RA + (Lquadrant - RAquadrant)) / 15;
-            const sinDec = 0.39782 * Math.sin(L * rad);
-            const cosDec = Math.cos(Math.asin(sinDec));
-            const cosH = (Math.cos(zenith * rad) - (sinDec * Math.sin(lat * rad))) / (cosDec * Math.cos(lat * rad));
-            if (cosH > 1 || cosH < -1) return null;
-            let H = isSunrise ? 360 - (1 / rad) * Math.acos(cosH) : (1 / rad) * Math.acos(cosH);
-            H = H / 15;
-            const T = H + RA - (0.06571 * t) - 6.622;
-            let UT = ((T - lngHour) % 24 + 24) % 24;
-            const hh = Math.floor(UT);
-            const mm = Math.round((UT - hh) * 60);
-            return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-        }
-
-        document.getElementById('sun-calc-btn').addEventListener('click', () => {
-            const lat = parseFloat(document.getElementById('sun-lat').value);
-            const lon = parseFloat(document.getElementById('sun-lon').value);
-            const outputEl = document.getElementById('sun-output');
-            if (isNaN(lat) || isNaN(lon)) {
-                outputEl.innerHTML = 'Enter valid lat/lon';
-                return;
-            }
-            const sunrise = calcSunUTC(lat, lon, true);
-            const sunset = calcSunUTC(lat, lon, false);
-            outputEl.innerHTML = `
-                Sunrise: ${sunrise ? sunrise + ' UTC' : 'Sun does not rise today'}<br>
-                Sunset: ${sunset ? sunset + ' UTC' : 'Sun does not set today'}
-            `;
-        });
-
-        // Leaflet Engine setup
-        const map = L.map('aprs-map').setView([-27.0, 137.0], 4);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
-        let trackingMarker = null;
-        let gridLayerGroup = L.layerGroup();
-        let gridVisible = false;
-
-        function drawMaidenheadGrid() {
-            gridLayerGroup.clearLayers();
-            for (let lon = 100; lon <= 160; lon += 2) {
-                L.polyline([[-45, lon], [-9, lon]], {color: '#30363d', weight: 1}).addTo(gridLayerGroup);
-            }
-            for (let lat = -46; lat <= -10; lat += 1) {
-                L.polyline([[lat, 100], [lat, 160]], {color: '#30363d', weight: 1}).addTo(gridLayerGroup);
-            }
-        }
-        drawMaidenheadGrid();
-
-        document.getElementById('toggle-grid-btn').addEventListener('click', () => {
-            if (gridVisible) {
-                map.removeLayer(gridLayerGroup);
-                document.getElementById('toggle-grid-btn').style.borderColor = '#30363d';
-            } else {
-                map.addLayer(gridLayerGroup);
-                document.getElementById('toggle-grid-btn').style.borderColor = '#ec4899';
-            }
-            gridVisible = !gridVisible;
-        });
-
-        // --- Day/Night Greyline Overlay ---
-        let greylineLayerGroup = L.layerGroup();
-        let greylineVisible = false;
-
-        function computeTerminatorPoints(date) {
-            const rad = Math.PI / 180;
-            const startOfYear = new Date(Date.UTC(date.getUTCFullYear(), 0, 0));
-            const dayOfYear = Math.floor((date - startOfYear) / 86400000);
-            const decl = -23.44 * Math.cos(rad * (360 / 365) * (dayOfYear + 10));
-            const declRad = decl * rad;
-            const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60;
-            const points = [];
-            for (let lon = -180; lon <= 180; lon += 2) {
-                const hourAngle = 15 * (utcHours - 12) + lon;
-                const haRad = hourAngle * rad;
-                let lat;
-                if (Math.abs(Math.tan(declRad)) < 1e-6) {
-                    lat = 0;
-                } else {
-                    lat = Math.atan(-Math.cos(haRad) / Math.tan(declRad)) / rad;
+                if (isNaN(fwd) || isNaN(ref) || fwd <= 0 || ref < 0 || ref > fwd) {
+                    outputEl.innerHTML = 'Invalid power inputs values.';
+                    return;
                 }
-                points.push([lat, lon]);
-            }
-            return points;
-        }
 
-        function drawGreyline() {
-            greylineLayerGroup.clearLayers();
-            const points = computeTerminatorPoints(new Date());
-            L.polyline(points, { color: '#eab308', weight: 2, dashArray: '6, 6', opacity: 0.8 }).addTo(greylineLayerGroup);
-        }
-        drawGreyline();
-        setInterval(() => { if (greylineVisible) drawGreyline(); }, 5 * 60 * 1000);
-
-        document.getElementById('toggle-greyline-btn').addEventListener('click', () => {
-            if (greylineVisible) {
-                map.removeLayer(greylineLayerGroup);
-                document.getElementById('toggle-greyline-btn').style.borderColor = '#30363d';
-            } else {
-                drawGreyline();
-                map.addLayer(greylineLayerGroup);
-                document.getElementById('toggle-greyline-btn').style.borderColor = '#eab308';
-            }
-            greylineVisible = !greylineVisible;
-        });
-
-        // Logger helper
-        function logUpdate(elementId, callsign, details) {
-            const block = document.getElementById(elementId);
-            if (!block) return;
-            const logHTML = `<div class="log-entry"><span class="entry-time">[${new Date().toISOString().substr(11, 8)}]</span><span class="entry-call">${callsign}</span> - <span class="entry-data">${details}</span></div>`;
-            block.innerHTML = logHTML + block.innerHTML;
-            if (block.children.length > 15) block.removeChild(block.lastChild);
-        }
-
-        // --- AUTHENTIC LIVE API CONNECTIONS VIA STABLE PROXY HUB ---
-        const proxyPrefix = "https://corsproxy.io/?";
-
-        async function fetchSatellitePasses() {
-            // Authentic ISS tracking coordinates
-            const url = `${proxyPrefix}https://api.wheretheiss.at/v1/satellites/25544`;
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                if (data && data.latitude) {
-                    logUpdate('sat-log', 'ISS (NORAD 25544)', `Lat: ${parseFloat(data.latitude).toFixed(4)} | Lon: ${parseFloat(data.longitude).toFixed(4)} | Alt: ${parseFloat(data.altitude).toFixed(1)} km`);
+                if (ref === 0) {
+                    outputEl.innerHTML = 'SWR: 1.00:1<br>Return Loss: Infinity dB<br>Mismatch Loss: 0.00 dB';
+                    return;
                 }
-            } catch (err) {
-                logUpdate('sat-log', '[ERR]', 'Amsat tracker connection state timed out.');
-            }
+
+                const reflectionCoefficient = Math.sqrt(ref / fwd);
+                const swr = (1 + reflectionCoefficient) / (1 - reflectionCoefficient);
+                const returnLoss = -20 * Math.log10(reflectionCoefficient);
+                const mismatchLoss = -10 * Math.log10(1 - Math.pow(reflectionCoefficient, 2));
+
+                outputEl.innerHTML = `
+                    SWR: ${swr.toFixed(2)}:1<br>
+                    Return Loss: ${returnLoss.toFixed(2)} dB<br>
+                    Mismatch Loss: ${mismatchLoss.toFixed(2)} dB
+                `;
+            });
         }
 
-        async function fetchBrandmeisterDMR() {
-            // Fixed correct LastHeard API Endpoint layout
-            const url = `${proxyPrefix}https://api.brandmeister.network/v1.1/lh/talkgroup/505`;
-            try {
-                const res = await fetch(url);
-                const entries = await res.json();
-                if (entries && entries.length > 0) {
-                    entries.slice(0, 3).forEach(record => {
-                        logUpdate('bm-log', record.sourceCallsign, `Talkgroup 505 active via ${record.hardware || 'DMR'}`);
-                    });
+        // --- Sunrise / Sunset Calculator (Approximate Geometric) ---
+        const sunCalcBtn = document.getElementById('sun-calc-btn');
+        if (sunCalcBtn) {
+            sunCalcBtn.addEventListener('click', () => {
+                const lat = parseFloat(document.getElementById('sun-lat').value);
+                const lon = parseFloat(document.getElementById('sun-lon').value);
+                const outputEl = document.getElementById('sun-output');
+
+                if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                    outputEl.innerHTML = 'Invalid coordinates entries.';
+                    return;
                 }
-            } catch (err) {
-                logUpdate('bm-log', '[ERR]', 'DMR Network transport dropped.');
-            }
-        }
 
-        async function fetchSystemFusionRegistry() {
-            const url = `${proxyPrefix}https://www.ysfreflector.de/api/list.php`;
-            try {
-                const res = await fetch(url);
-                const nodes = await res.json();
-                if (nodes && nodes.length > 0) {
-                    const ausNodes = nodes.filter(node =>
-                        node.name.toUpperCase().includes('AUS') ||
-                        node.description.toUpperCase().includes('AUSTRALIA')
-                    ).slice(0, 2);
-                    ausNodes.forEach(node => {
-                        logUpdate('ysf-log', node.name.substr(0, 10), `Users: ${node.users || 0} (${node.description.substr(0, 20)})`);
-                    });
+                // Simplified algorithmic fallback estimation for current date context
+                const now = new Date();
+                const start = new Date(now.getFullYear(), 0, 0);
+                const diff = now - start;
+                const oneDay = 1000 * 60 * 60 * 24;
+                const dayOfYear = Math.floor(diff / oneDay);
+
+                // Earth orbital approximation constants
+                const gamma = (2 * Math.PI / 365) * (dayOfYear - 1 + (12 - 12) / 24);
+                const eqtime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
+                const decl = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma) - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma) - 0.002697 * Math.cos(3 * gamma) + 0.00148 * Math.sin(3 * gamma);
+
+                const latRad = lat * Math.PI / 180;
+                const haarg = Math.cos(90.833 * Math.PI / 180) / (Math.cos(latRad) * Math.cos(decl)) - Math.tan(latRad) * Math.tan(decl);
+                
+                if (haarg > 1 || haarg < -1) {
+                    outputEl.innerHTML = 'Polar Day/Night conditions encountered.';
+                    return;
                 }
-            } catch (err) {
-                logUpdate('ysf-log', '[ERR]', 'YSF Master servers blocking handshake.');
-            }
-        }
 
-        async function fetchLiveDXCluster() {
-            // Real DX cluster aggregator source
-            const url = `${proxyPrefix}https://auroras.live/api/v1/dx.php`;
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                if (data && data.dx && data.dx.length > 0) {
-                    data.dx.slice(0, 3).forEach(spot => {
-                        logUpdate('dx-cluster-log', spot.dxcall, `Freq: ${spot.frequency} kHz | De: ${spot.call}`);
-                    });
-                }
-            } catch (err) {
-                logUpdate('dx-cluster-log', '[ERR]', 'DX Spot cluster down or throttling.');
-            }
-        }
+                const hourAngle = Math.acos(haarg) * 180 / Math.PI;
+                const sunriseUTCMinutes = 720 - 4 * (lon + hourAngle) - eqtime;
+                const sunsetUTCMinutes = 720 - 4 * (lon - hourAngle) - eqtime;
 
-        // --- WSPR VK Spots (wspr.live public ClickHouse query endpoint) ---
-        async function fetchWSPRSpots() {
-            const wsprQuery = "SELECT tx_sign, rx_sign, freq, snr, time FROM wspr.rx WHERE tx_sign LIKE 'VK%' ORDER BY time DESC LIMIT 5 FORMAT JSON";
-            const url = `${proxyPrefix}https://db1.wspr.live/?query=${encodeURIComponent(wsprQuery)}`;
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                const rows = data && data.data ? data.data : [];
-                if (rows.length > 0) {
-                    rows.slice(0, 3).forEach(row => {
-                        logUpdate('wspr-log', row.tx_sign, `Heard by ${row.rx_sign} | ${row.freq} Hz | SNR ${row.snr} dB`);
-                    });
-                } else {
-                    logUpdate('wspr-log', '[WSPR]', 'No recent VK WSPR reports found.');
-                }
-            } catch (err) {
-                logUpdate('wspr-log', '[ERR]', 'wspr.live query unreachable.');
-            }
-        }
-
-        // --- Numeric Space Weather Readout (parses hamqsl.com XML feed) ---
-        async function fetchSpaceWeatherNumeric() {
-            const url = `${proxyPrefix}https://www.hamqsl.com/solarxml.php`;
-            try {
-                const res = await fetch(url);
-                const text = await res.text();
-                const xml = new DOMParser().parseFromString(text, 'text/xml');
-                const getTag = (name) => {
-                    const el = xml.getElementsByTagName(name)[0];
-                    return el ? el.textContent : '--';
+                const parseMinutes = (m) => {
+                    const h = Math.floor((m / 60) % 24);
+                    const mins = Math.floor(m % 60);
+                    return `${h.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
                 };
-                document.getElementById('wx-sfi').textContent = getTag('solarflux');
-                document.getElementById('wx-sunspots').textContent = getTag('sunspots');
-                document.getElementById('wx-aindex').textContent = getTag('aindex');
-                document.getElementById('wx-kindex').textContent = getTag('kindex');
-                document.getElementById('wx-xray').textContent = getTag('xray');
-                document.getElementById('wx-vhf').textContent = getTag('vhfconditions') !== '--' ? getTag('vhfconditions') : getTag('calculatedvhfconditions');
-            } catch (err) {
-                ['wx-sfi','wx-sunspots','wx-aindex','wx-kindex','wx-xray','wx-vhf'].forEach(id => {
-                    document.getElementById(id).textContent = 'ERR';
-                });
-            }
+
+                outputEl.innerHTML = `
+                    Sunrise: ${parseMinutes(sunriseUTCMinutes)} UTC<br>
+                    Sunset: ${parseMinutes(sunsetUTCMinutes)} UTC
+                `;
+            });
         }
-
-        // --- POTA & SOTA VK Spot Feeds ---
-        async function fetchPOTASpots() {
-            const url = `${proxyPrefix}https://api.pota.app/spot/activator`;
-            try {
-                const res = await fetch(url);
-                const spots = await res.json();
-                if (Array.isArray(spots)) {
-                    const vkSpots = spots.filter(s => (s.activator || '').toUpperCase().startsWith('VK')).slice(0, 3);
-                    vkSpots.forEach(s => {
-                        logUpdate('pota-log', s.activator, `POTA ${s.reference} | ${s.frequency} kHz ${s.mode || ''}`);
-                    });
-                    if (vkSpots.length === 0) {
-                        logUpdate('pota-log', '[POTA]', 'No active VK parks right now.');
-                    }
-                }
-            } catch (err) {
-                logUpdate('pota-log', '[ERR]', 'POTA spot feed unreachable.');
-            }
-        }
-
-        async function fetchSOTASpots() {
-            const url = `${proxyPrefix}https://api2.sota.org.uk/api/spots/60/all`;
-            try {
-                const res = await fetch(url);
-                const spots = await res.json();
-                if (Array.isArray(spots)) {
-                    const vkSpots = spots.filter(s => (s.associationCode || '').toUpperCase() === 'VK' || (s.callsign || '').toUpperCase().startsWith('VK')).slice(0, 3);
-                    vkSpots.forEach(s => {
-                        logUpdate('pota-log', s.callsign, `SOTA ${s.summitCode} | ${s.frequency} MHz ${s.mode || ''}`);
-                    });
-                }
-            } catch (err) {
-                logUpdate('pota-log', '[ERR]', 'SOTA spot feed unreachable.');
-            }
-        }
-
-        // Live APRS Tracker Database query
-        document.getElementById('search-btn').addEventListener('click', async () => {
-            const callsign = document.getElementById('callsign-input').value.trim().toUpperCase();
-            if (!callsign) return alert('Enter a target callsign');
-
-            const apiKey = '215889.nnmMKVUZjhC1x1L';
-            const url = `${proxyPrefix}https://api.aprs.fi/api/get?name=${callsign}&what=loc&format=json&apikey=${apiKey}`;
-
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data && data.result === 'ok' && data.found > 0) {
-                    const entry = data.entries[0];
-                    const lat = parseFloat(entry.lat);
-                    const lng = parseFloat(entry.lng);
-
-                    if (trackingMarker) map.removeLayer(trackingMarker);
-                    trackingMarker = L.marker([lat, lng]).addTo(map);
-                    trackingMarker.bindPopup(`<b>${entry.name}</b><br>${entry.comment || 'Active Station'}`).openPopup();
-                    map.flyTo([lat, lng], 10);
-                } else {
-                    alert(`Station ${callsign} data not active on APRS IS mesh right now.`);
-                }
-            } catch (err) {
-                alert('APRS data pipeline failure.');
-            }
-        });
-
-        // Execution Loops
-        function initLiveFeeds() {
-            fetchSatellitePasses();
-            fetchBrandmeisterDMR();
-            fetchSystemFusionRegistry();
-            fetchLiveDXCluster();
-            fetchPOTASpots();
-            fetchSOTASpots();
-            fetchSpaceWeatherNumeric();
-            fetchWSPRSpots();
-        }
-
-        initLiveFeeds();
-        setInterval(fetchBrandmeisterDMR, 30000);
-        setInterval(fetchLiveDXCluster, 45000);
-        setInterval(fetchSatellitePasses, 60000);
-        setInterval(fetchSystemFusionRegistry, 90000);
-        setInterval(fetchPOTASpots, 60000);
-        setInterval(fetchSOTASpots, 75000);
-        setInterval(fetchSpaceWeatherNumeric, 600000);
-        setInterval(fetchWSPRSpots, 60000);
     </script>
 </body>
 </html>
