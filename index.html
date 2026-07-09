@@ -342,9 +342,24 @@
         updateClock();
 
         // Initialize Leaflet Map
-        const map = L.map('aprs-map').setView([-27.4700, 153.0210], 6); // Default View near South East QLD
+        // FIX: the world basemap was repeating infinitely as you panned east/west.
+        // That's Leaflet's default horizontal wrap behaviour for a slippy map, not a bug in the
+        // tile URL itself — so we lock it down: noWrap on the tile layer stops it requesting
+        // duplicate copies of the world, and setMaxBounds() stops the viewport from panning/
+        // dragging past the edge of the single world copy.
+        const worldBounds = L.latLngBounds(L.latLng(-90, -180), L.latLng(90, 180));
+
+        const map = L.map('aprs-map', {
+            maxBounds: worldBounds,
+            maxBoundsViscosity: 1.0, // fully "solid" edges, no rubber-banding past the map edge
+            worldCopyJump: false,
+            minZoom: 2
+        }).setView([-27.4700, 153.0210], 6); // Default View near South East QLD
+
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO'
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            noWrap: true,       // don't tile the basemap repeatedly across the antimeridian
+            bounds: worldBounds // only request tiles that fall within a single world copy
         }).addTo(map);
 
         // Phonetic dataset generation
