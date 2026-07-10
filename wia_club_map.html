@@ -1,394 +1,1364 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WIA Affiliated Radio Clubs - Australia</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<style>
-  :root{
-    --bg:#0f1115; --panel:#161a21; --panel2:#1d232c; --border:#2a3138;
-    --text:#e8ecf1; --muted:#8b96a5; --accent:#4fb3ff;
-    --vk1:#e05c5c; --vk2:#f2a154; --vk3:#f2d24a; --vk4:#6bd17f;
-    --vk5:#4fc2c2; --vk6:#4f8ef2; --vk7:#a76bf2; --vk8:#e05ca0;
-  }
-  *{box-sizing:border-box;}
-  html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);}
-  #app{display:flex;height:100vh;width:100vw;overflow:hidden;}
-  #sidebar{width:360px;min-width:300px;max-width:420px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;}
-  #sidebar-header{padding:16px 16px 10px;border-bottom:1px solid var(--border);}
-  #sidebar-header h1{font-size:16px;margin:0 0 4px;font-weight:700;letter-spacing:.2px;}
-  #sidebar-header p{font-size:12px;color:var(--muted);margin:0;line-height:1.4;}
-  #search{width:100%;margin-top:10px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-size:13px;outline:none;}
-  #search:focus{border-color:var(--accent);}
-  #stateFilters{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;border-bottom:1px solid var(--border);}
-  .chip{cursor:pointer;font-size:11px;font-weight:700;padding:5px 9px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);user-select:none;transition:all .15s;}
-  .chip.active{color:#0f1115;}
-  .chip[data-state="VK1"].active{background:var(--vk1);border-color:var(--vk1);}
-  .chip[data-state="VK2"].active{background:var(--vk2);border-color:var(--vk2);}
-  .chip[data-state="VK3"].active{background:var(--vk3);border-color:var(--vk3);}
-  .chip[data-state="VK4"].active{background:var(--vk4);border-color:var(--vk4);}
-  .chip[data-state="VK5"].active{background:var(--vk5);border-color:var(--vk5);}
-  .chip[data-state="VK6"].active{background:var(--vk6);border-color:var(--vk6);}
-  .chip[data-state="VK7"].active{background:var(--vk7);border-color:var(--vk7);}
-  .chip[data-state="VK8"].active{background:var(--vk8);border-color:var(--vk8);}
-  #count{padding:8px 16px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);}
-  #list{flex:1;overflow-y:auto;padding:6px 0;}
-  .club-item{padding:10px 16px;border-bottom:1px solid #1d232c;cursor:pointer;}
-  .club-item:hover{background:var(--panel2);}
-  .club-item .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;}
-  .club-item .name{font-size:13px;font-weight:600;color:var(--text);}
-  .club-item .meta{font-size:11px;color:var(--muted);margin-top:2px;padding-left:15px;}
-  .club-item.national .meta{font-style:italic;}
-  #map{flex:1;background:#0f1115;}
-  .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.6);}
-  #errorBanner{display:none;position:absolute;top:0;left:0;right:0;background:#e05c5c;color:#fff;padding:10px 16px;font-size:13px;z-index:2000;text-align:center;}
-  .leaflet-popup-content-wrapper{background:var(--panel);color:var(--text);border-radius:10px;}
-  .leaflet-popup-tip{background:var(--panel);}
-  .popup h3{margin:0 0 4px;font-size:14px;}
-  .popup .region{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--panel2);color:var(--accent);margin-bottom:6px;}
-  .popup p{margin:2px 0;font-size:12px;color:var(--muted);}
-  .popup a{color:var(--accent);text-decoration:none;font-size:12px;font-weight:600;}
-  .popup a:hover{text-decoration:underline;}
-  .approx-note{font-size:10px;color:#e0a25c;margin-top:4px;}
-  #legend{position:absolute;bottom:20px;left:20px;background:rgba(22,26,33,.92);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:11px;z-index:1000;backdrop-filter:blur(4px);}
-  #legend .row{display:flex;align-items:center;gap:6px;margin:3px 0;}
-  #legend .sw{width:9px;height:9px;border-radius:50%;}
-  #nationalPanel{border-top:1px solid var(--border);max-height:150px;overflow-y:auto;}
-  #nationalPanel h4{font-size:11px;color:var(--muted);margin:10px 16px 6px;text-transform:uppercase;letter-spacing:.5px;}
-  #nationalPanel .club-item{padding:6px 16px;}
-  ::-webkit-scrollbar{width:8px;}
-  ::-webkit-scrollbar-thumb{background:#2a3138;border-radius:4px;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aus Ham Radio Connect</title>
+    <a href="https://hackclub.com/"><img style="position: absolute; top: 0; left: 10px; border: 0; width: 256px; z-index: 999;" src="https://assets.hackclub.com/flag-orpheus-top.svg" alt="Hack Club"/></a>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: monospace; padding: 2rem; margin: 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .card { background: #161b22; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #30363d; }
+        .map-card { grid-column: span 2; }
+        #aprs-map { height: 450px; width: 100%; border-radius: 0.375rem; margin-top: 1rem; background: #010409; border: 1px solid #30363d; }
+        h1 { color: #ec4899; margin-top: 0; text-shadow: 0 0 10px rgba(236, 72, 153, 0.3); }
+        h3 { margin-top: 0; color: #f0f6fc; border-bottom: 1px solid #30363d; padding-bottom: 0.5rem; }
+        input { background: #0d1117; border: 1px solid #30363d; color: #f0f6fc; padding: 0.5rem; border-radius: 0.25rem; text-transform: uppercase; font-family: monospace; }
+        button { background: #ec4899; border: none; color: white; font-weight: bold; padding: 0.5rem 1rem; border-radius: 0.25rem; cursor: pointer; font-family: monospace; }
+        button:hover { background: #db2777; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Streaming Data Interfaces */
+        .traffic-log { font-family: monospace; background: #0d1117; padding: 0.75rem; border-radius: 0.375rem; height: 110px; overflow-y: auto; font-size: 0.85rem; border: 1px solid #30363d; }
+        .log-entry { margin-bottom: 0.25rem; border-left: 3px solid #ec4899; padding-left: 0.5rem; }
+        .entry-time { color: #8b949e; margin-right: 0.5rem; }
+        .entry-call { color: #58a6ff; font-weight: bold; }
+        .entry-data { color: #a7f3d0; }
+
+        /* Space Weather Layout elements */
+        .wx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem; margin-bottom: 1rem; }
+        .wx-val { color: #eab308; font-weight: bold; }
+        .solar-banner img { max-width: 100%; border: 1px solid #30363d; border-radius: 0.25rem; }
+
+        /* Hack Club Stardust Indicator styles */
+        .status-badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; background: #21262d; color: #ec4899; border: 1px solid #30363d; }
+
+        /* Schedulers & Grid UI Links */
+        .grid-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem; }
+        .grid-link { color: #58a6ff; text-decoration: none; border: 1px solid #30363d; padding: 0.55rem; border-radius: 0.25rem; background: #0d1117; text-align: center; }
+        .grid-link:hover { background: #21262d; border-color: #58a6ff; }
+
+        /* Interactive Phonetic Alphabet Grid Styles */
+        .alpha-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 0.5rem; margin-top: 1rem; }
+        .alpha-box { background: #0d1117; border: 1px solid #30363d; border-radius: 0.375rem; padding: 0.5rem; text-align: center; position: relative; cursor: crosshair; transition: all 0.2s ease; overflow: visible; }
+        .alpha-letter { font-size: 1.25rem; font-weight: bold; color: #58a6ff; }
+        .alpha-popup { display: none; position: absolute; bottom: 115%; left: 50%; transform: translateX(-50%); background: #1f242c; border: 1px solid #ec4899; padding: 0.5rem; border-radius: 0.25rem; width: 130px; box-shadow: 0 0 15px rgba(236, 72, 153, 0.4); z-index: 100; pointer-events: none; }
+        .alpha-popup::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: #ec4899 transparent transparent transparent; }
+        .popup-word { font-weight: bold; color: #f0f6fc; font-size: 0.85rem; margin-bottom: 0.15rem; text-transform: uppercase; }
+        .popup-voice { color: #eab308; font-size: 0.75rem; font-style: italic; }
+        .alpha-box:hover { border-color: #ec4899; background: #161b22; transform: translateY(-2px); }
+        .alpha-box:hover .alpha-popup { display: block; }
+
+        /* Grid Locator + warning styles */
+        .warning-note { color: #eab308; font-size: 0.75rem; margin-top: 0.5rem; border-top: 1px dashed #30363d; padding-top: 0.5rem; }
+        .locator-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        .locator-row input { flex: 1; min-width: 80px; text-transform: none; }
+        .locator-output { font-size: 1.5rem; color: #eab308; font-weight: bold; margin-top: 0.5rem; letter-spacing: 1px; }
+
+        /* Tab navigation */
+        .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #30363d; padding-bottom: 1rem; }
+        .tab-btn { background: #161b22; border: 1px solid #30363d; color: #8b949e; padding: 0.6rem 1.25rem; border-radius: 0.375rem; font-family: monospace; font-weight: bold; cursor: pointer; }
+        .tab-btn:hover { color: #f0f6fc; border-color: #58a6ff; }
+        .tab-btn.active { background: #ec4899; color: #fff; border-color: #ec4899; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Settings tab */
+        .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid #21262d; flex-wrap: wrap; }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-label { font-size: 0.85rem; color: #c9d1d9; }
+        .settings-desc { font-size: 0.7rem; color: #8b949e; margin-top: 0.15rem; }
+        .settings-control select, .settings-control input[type="text"] { width: auto; min-width: 140px; }
+        .toggle-switch { position: relative; width: 44px; height: 24px; background: #21262d; border: 1px solid #30363d; border-radius: 12px; cursor: pointer; flex-shrink: 0; }
+        .toggle-switch.on { background: #ec4899; border-color: #ec4899; }
+        .toggle-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #f0f6fc; border-radius: 50%; transition: left 0.15s ease; }
+        .toggle-switch.on::after { left: 22px; }
+        .settings-save-bar { display: flex; gap: 0.75rem; margin-top: 1rem; }
+        #settings-saved-msg { color: #a7f3d0; font-size: 0.8rem; display: none; align-self: center; }
+    </style>
 </head>
 <body>
-<div id="app">
-  <div id="sidebar">
-    <div id="sidebar-header">
-      <h1>Techsam12 VK4AHA and Claude</h1>
-      <h2>Location isnt very accurate, best to look on google maps</h2>
-      <p>Amateur radio clubs across Australia, sourced from the Wireless Institute of Australia club directory (wia.org.au/clubs).</p>
-      <input id="search" type="text" placeholder="Search clubs, towns, callsigns…">
+    <h1>🚀 Aus Ham Radio Connect // HackClub Stardance Terminal</h1>
+    <p style="color: #8b949e; margin-bottom: 2rem;">Live HF Propagation Matrix, DMR Tickers & APRS Node Tracker</p>
+
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
     </div>
-    <div id="stateFilters"></div>
-    <div id="count"></div>
-    <div id="list"></div>
-    <div id="nationalPanel">
-      <h4>National / No Fixed Location</h4>
-      <div id="nationalList"></div>
+
+    <div id="tab-dashboard" class="tab-panel active">
+    <div class="grid">
+        <div style="display: flex; flex-direction: column; gap: 1.5rem; grid-column: span 2;">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <h3>APRS Map Tracker</h3>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button id="toggle-grid-btn" style="background: #21262d; border: 1px solid #30363d; color: #c9d1d9;">Toggle Grid</button>
+                        <button id="toggle-greyline-btn" style="background: #21262d; border: 1px solid #30363d; color: #c9d1d9;">Toggle Greyline</button>
+                        <input type="text" id="callsign-input" placeholder="VK3RHD-1, VK4AHA, VK2ABC" style="min-width: 180px;">
+                        <button id="search-btn">Plot Stations</button>
+                    </div>
+                </div>
+                <div id="aprs-map"></div>
+                <div id="map-status" style="display:none; font-size:0.8rem; color:#eab308; margin-top:0.5rem; padding:0.5rem; background:#0d1117; border:1px solid #30363d; border-radius:0.25rem;"></div>
+                <div class="warning-note" style="color:#eab308; border-top:1px dashed #30363d;">
+                    <b>Dear HackClub Reviewer,</b> Toggle Grid and Toggle Greyline work with no setup. Station plotting needs a free aprs.fi API key (Settings tab). Note: aprs.fi's free API only looks up callsigns you name — it has no "show everyone in this area" search — so this is a watch list (comma-separated, up to 20 calls) rather than an automatic area scan. Each station is plotted with its real APRS symbol icon.
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0; border: none;">🥧 Pi-Star Hotspot Status</h3>
+                        <span class="status-badge" id="pistar-status" style="color:#8b949e; border-color:#30363d;">Not Checked</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" id="pistar-ip" placeholder="192.168.1.50" style="text-transform:none;">
+                        <button id="pistar-check-btn">Check</button>
+                    </div>
+                    <div class="traffic-log" id="pistar-log">
+                        <div class="log-entry"><span class="entry-time">[System]</span> Enter your Pi-Star hotspot's local IP and press Check. Only works when this page is on the same local network as the hotspot.</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Terminal Chronometer</h3>
+                    <div style="font-size: 1.5rem; color: #eab308; font-weight: bold; margin: 0.5rem 0;" id="utc-clock">00:00:00 UTC</div>
+                    <p style="color: #8b949e; font-size: 0.8rem; margin: 0;">Standard operation synchronization time.</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">🗺️ Radio Mapping Directories</h3>
+                    <div class="grid-matrix">
+                        <a href="https://sammakesstuff.github.io/Aus-Ham-Radio-Connect/repeater_map_dashboard.html" target="_blank" class="grid-link">VK Repeater Map</a>
+                        <a href="https://sammakesstuff.github.io/Aus-Ham-Radio-Connect/wia_club_map.html" target="_blank" class="grid-link">WIA Club Map</a>
+                        <a href="https://sammakesstuff.github.io/Aus-Ham-Radio-Connect/vk-activator_map.html" target="_blank" class="grid-link">POTA/SOTA/WWFF Activator Map</a>
+                    </div>
+                    <p style="color: #8b949e; font-size: 0.7rem; margin: 0.5rem 0 0;">Note: the activator map link assumes the file is named <code>activator_map.html</code> in the repo — rename this href if yours is called something else.</p>
+                </div>
+
+                <div class="card">
+                    <h3>CW Morse Generator</h3>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" id="cw-input" placeholder="VK3...">
+                        <button id="cw-btn">Convert</button>
+                    </div>
+                    <div id="cw-output" style="color: #a7f3d0; font-family: monospace; min-height: 20px; font-size: 1.1rem; letter-spacing: 2px;"></div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">📍 Maidenhead Grid Locator</h3>
+                    <div class="locator-row">
+                        <input type="text" id="loc-lat" placeholder="Lat (-27.47)">
+                        <input type="text" id="loc-lon" placeholder="Lon (153.02)">
+                        <button id="loc-calc-btn">Calc</button>
+                    </div>
+                    <button id="loc-geo-btn" style="width: 100%; background: #21262d; border: 1px solid #30363d; color: #c9d1d9;">📡 Use My Location</button>
+                    <div class="locator-output" id="loc-output">------</div>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0; border: none;">🏞️ POTA / SOTA Live Activations</h3>
+                        <span class="status-badge" style="color:#a7f3d0; border-color:#a7f3d0;">VK Filtered</span>
+                    </div>
+                    <div class="traffic-log" id="pota-log">
+                        <div class="log-entry"><span class="entry-time">[System]</span> Polling Parks/Summits on the Air spot feeds...</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0; border: none;">📻 NCDXF/IARU Beacon Tracker</h3>
+                        <span class="status-badge" style="color:#58a6ff; border-color:#58a6ff;">Live Calc</span>
+                    </div>
+                    <div style="font-size: 1.1rem; color: #f0f6fc; margin-bottom: 0.25rem;">Now: <span id="beacon-call" style="color:#eab308; font-weight:bold;">--</span></div>
+                    <div style="font-size: 0.9rem; color: #8b949e;">Band: <span id="beacon-band" class="wx-val">--</span> | Next in <span id="beacon-countdown" class="wx-val">--</span>s</div>
+                    <p style="color: #8b949e; font-size: 0.75rem; margin: 0.5rem 0 0;">18-beacon global network, 10s slots per band, 15 min full cycle. Calculated locally from UTC — no API required.</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">📏 Antenna Length Calculator</h3>
+                    <div class="locator-row">
+                        <input type="text" id="ant-freq" placeholder="Freq (MHz) e.g. 7.1">
+                        <button id="ant-calc-btn">Calc</button>
+                    </div>
+                    <div id="ant-output" style="font-size: 0.9rem; line-height: 1.6; color: #a7f3d0;">
+                        Dipole (½λ): --<br>
+                        Vertical (¼λ): --
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">🏆 Recurring VK Contest Calendar</h3>
+                    <div style="font-size: 0.85rem; line-height: 1.8; color: #c9d1d9;">
+                        <div>🗓️ <b>VK Sprint</b> — periodic, evenings (check WIA calendar)</div>
+                        <div>🗓️ <b>Ross Hull Contest</b> — Jun–Jul, VHF/UHF</div>
+                        <div>🗓️ <b>Remembrance Day Contest (RD)</b> — mid-August</div>
+                        <div>🗓️ <b>John Moyle Field Day</b> — March</div>
+                        <div>🗓️ <b>Oceania DX Contest</b> — October</div>
+                    </div>
+                    <a href="https://www.wia.org.au/members/contests/" target="_blank" class="grid-link" style="display:block; margin-top:0.75rem;">Full WIA Contest Calendar ↗</a>
+                    <p style="color: #8b949e; font-size: 0.7rem; margin: 0.5rem 0 0;">Dates are indicative — confirm exact weekends on the WIA site each year.</p>
+                </div>
+
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h3 style="margin: 0; border: none;">🚨 WICEN / Emergency Net</h3>
+                        <span class="status-badge" style="color:#ec4899; border-color:#ec4899;">Reference</span>
+                    </div>
+                    <p style="font-size: 0.85rem; line-height: 1.6; color: #c9d1d9; margin: 0 0 0.75rem;">
+                        WICEN (Wireless Institute Civil Emergency Network) coordinates amateur radio volunteers during bushfires, floods, and other declared emergencies across VK states.
+                    </p>
+                    <div class="grid-matrix">
+                        <a href="https://www.wia.org.au/members/wicen/" target="_blank" class="grid-link">WIA WICEN Info</a>
+                        <a href="https://www.emergency.qld.gov.au/" target="_blank" class="grid-link">QLD Emergency</a>
+                    </div>
+                    <p style="color: #8b949e; font-size: 0.7rem; margin: 0.75rem 0 0;">Always follow your local WICEN group and RFS/SES for activation status — this card is reference only, not a live feed.</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">📉 SWR / Return Loss Calculator</h3>
+                    <div class="locator-row">
+                        <input type="text" id="swr-fwd" placeholder="Fwd Power (W)">
+                        <input type="text" id="swr-ref" placeholder="Refl Power (W)">
+                        <button id="swr-calc-btn">Calc</button>
+                    </div>
+                    <div id="swr-output" style="font-size: 0.9rem; line-height: 1.6; color: #a7f3d0;">
+                        SWR: --<br>
+                        Return Loss: --<br>
+                        Mismatch Loss: --
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>❓ Q-Code Quick Reference</h3>
+                    <div id="qcode-matrix" class="alpha-container"></div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">🌅 Sunrise / Sunset Calculator</h3>
+                    <div class="locator-row">
+                        <input type="text" id="sun-lat" placeholder="Lat (-27.47)">
+                        <input type="text" id="sun-lon" placeholder="Lon (153.02)">
+                        <button id="sun-calc-btn">Calc</button>
+                    </div>
+                    <div id="sun-output" style="font-size: 0.9rem; line-height: 1.6; color: #a7f3d0;">
+                        Sunrise: -- UTC<br>
+                        Sunset: -- UTC
+                    </div>
+                    <p style="color: #8b949e; font-size: 0.7rem; margin: 0.5rem 0 0;">Useful for planning grey-line DX windows on 40/80/160m.</p>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 0.75rem;">📡 VK 2m / 70cm Band Plan Quick Ref</h3>
+                    <div style="font-size: 0.8rem; line-height: 1.7; color: #c9d1d9;">
+                        <div><b>2m FM Calling:</b> 146.500 MHz</div>
+                        <div><b>2m Repeaters:</b> 147.000–147.400 MHz (−600 kHz offset)</div>
+                        <div><b>2m Simplex:</b> 146.475–146.975 MHz</div>
+                        <div><b>70cm FM Calling:</b> 438.525 MHz</div>
+                        <div><b>70cm Repeaters:</b> 438–440 MHz (−5 MHz offset)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🗣️ Phonetic Alphabet Quick Reference</h3>
+                <div id="phonetic-matrix" class="alpha-container"></div>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="card">
+                <div class="solar-banner" style="text-align: center;">
+                    <a href="https://www.hamqsl.com/solar.html" title="Click to add Solar-Terrestrial Data to your website!"><img src="https://www.hamqsl.com/solarn0nbh.php" alt="Solar Data"></a>
+                </div>
+                <div class="wx-grid" id="solar-numeric-grid" style="margin-top: 1rem;">
+                    <div>Solar Flux: <span class="wx-val" id="wx-sfi">--</span></div>
+                    <div>Sunspots: <span class="wx-val" id="wx-sunspots">--</span></div>
+                    <div>A-Index: <span class="wx-val" id="wx-aindex">--</span></div>
+                    <div>K-Index: <span class="wx-val" id="wx-kindex">--</span></div>
+                    <div>X-Ray: <span class="wx-val" id="wx-xray">--</span></div>
+                    <div>VHF Cond: <span class="wx-val" id="wx-vhf">--</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">🛰️ Satellite Pass Predictions</h3>
+                    <span class="status-badge" style="color:#eab308; border-color:#eab308;">SGP4 Live Calc</span>
+                </div>
+                <div style="font-size: 0.75rem; color: #8b949e; margin-bottom: 0.5rem;">From <span id="sat-location-label">-27.47, 153.02</span> — <button id="sat-recalc-btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Recalculate</button> <button id="sat-geo-btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background:#21262d; border:1px solid #30363d; color:#c9d1d9;">📡 Use My Location</button></div>
+                <div class="traffic-log" id="sat-log" style="height:150px;">
+                    <div class="log-entry"><span class="entry-time">[System]</span> Loading TLE data and computing passes...</div>
+                </div>
+                <p style="color: #8b949e; font-size: 0.7rem; margin: 0.5rem 0 0;">Next AOS for ISS, SO-50, AO-91 & AO-92 — real SGP4 propagation from live Celestrak TLEs, computed entirely in your browser.</p>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">📡 Live DX Cluster</h3>
+                    <span class="status-badge" style="color:#58a6ff; border-color:#58a6ff;">HF Spots</span>
+                </div>
+                <div class="traffic-log" id="dx-cluster-log">
+                    <div class="log-entry"><span class="entry-time">[System]</span> Tracking regional HF cluster nodes...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">Brandmeister DMR Network</h3>
+                    <span class="status-badge">Reference</span>
+                </div>
+                <p style="font-size: 0.8rem; line-height: 1.5; color: #c9d1d9; margin: 0 0 0.75rem;">
+                    Brandmeister's Last Heard feed runs over a push socket protocol, not plain HTTP — it can't be embedded in a static page without a backend. Use the live dashboard directly:
+                </p>
+                <div class="grid-matrix">
+                    <a href="https://brandmeister.network/?page=lh" target="_blank" class="grid-link">Live Last Heard ↗</a>
+                    <a href="https://brandmeister.network/?page=talkgroups" target="_blank" class="grid-link">Talkgroup List ↗</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">Yaesu System Fusion</h3>
+                    <span class="status-badge">Reference</span>
+                </div>
+                <p style="font-size: 0.8rem; line-height: 1.5; color: #c9d1d9; margin: 0 0 0.75rem;">
+                    YSF reflector activity isn't published as an open CORS-friendly JSON feed. Check current reflector status directly:
+                </p>
+                <div class="grid-matrix">
+                    <a href="https://www.ysfreflector.de/" target="_blank" class="grid-link">YSF Reflector List ↗</a>
+                    <a href="https://register.ysfreflector.de/" target="_blank" class="grid-link">Registry ↗</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0; border: none;">🌊 WSPR VK Spots</h3>
+                    <span class="status-badge" style="color:#a7f3d0; border-color:#a7f3d0;">wspr.live</span>
+                </div>
+                <div class="traffic-log" id="wspr-log">
+                    <div class="log-entry"><span class="entry-time">[System]</span> Querying recent WSPR reception reports...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 0.75rem;">🔊 Active Australian WebSDR Matrix</h3>
+                <div class="grid-matrix">
+                    <a href="http://vk4een.proxy.kiwisdr.com:8073/" target="_blank" class="grid-link">Brisbane SDR 1</a>
+                    <a href="http://sdrbris.proxy.kiwisdr.com:8073/" target="_blank" class="grid-link">Brisbane SDR 2</a>
+                    <a href="http://22537.proxy.kiwisdr.com:8073/" target="_blank" class="grid-link">Alternative SDR</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 0.75rem;">📡 Link Directory</h3>
+                <div class="grid-matrix">
+                    <a href="https://www.qrz.com/" target="_blank" class="grid-link">QRZ</a>
+                    <a href="https://www.google.com/search?q=ham+radio" target="_blank" class="grid-link">Ham Radio Google</a>
+                    <a href="https://aprs.fi" target="_blank" class="grid-link">APRS.fi</a>
+                    <a href="https://qrz.com/db/VK4AHA" target="_blank" class="grid-link">Sam's QRZ Page</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom: 0.75rem;">HAM Radio YouTube</h3>
+                <div class="grid-matrix">
+                    <a href="https://www.youtube.com/@HamRadioCrashCourse" target="_blank" class="grid-link">Ham Crash Course</a>
+                    <a href="https://www.youtube.com/@HamRadioDX" target="_blank" class="grid-link">Ham Radio DX 🦘</a>
+                    <a href="https://www.youtube.com/@DXCommanderHQ" target="_blank" class="grid-link">DX Commander 🐐</a>
+                    <a href="https://www.youtube.com/@temporarilyoffline" target="_blank" class="grid-link">Temp Offline</a>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div id="map">
-    <div id="errorBanner"></div>
-    <div id="legend"></div>
-  </div>
-</div>
+    </div><!-- /#tab-dashboard -->
 
-<script>
-function showError(msg){
-  const b = document.getElementById('errorBanner');
-  b.textContent = '⚠ ' + msg;
-  b.style.display = 'block';
-}
-window.addEventListener('error', function(e){
-  showError('Something failed to load (' + (e.message || 'unknown error') + '). Check your internet connection — this page needs to reach cdnjs.cloudflare.com and tile.openstreetmap.org.');
-});
-if (typeof L === 'undefined') {
-  showError('Leaflet failed to load from cdnjs.cloudflare.com. Check your internet connection or try opening this file in a different browser.');
-}
-</script>
-<script>
-// ---------------------------------------------------------------------------
-// DATA
-// Coordinates are approximate town/suburb centroids derived from each club's
-// name and public region (WIA does not publish per-club lat/lon). "approx"
-// clubs are pinned at the nearest identifiable town for the club's stated
-// region. State-wide/national bodies with no fixed clubhouse are listed
-// separately rather than pinned.
-// ---------------------------------------------------------------------------
-const STATE_INFO = {
-  VK1:{label:"ACT",        color:"#e05c5c"},
-  VK2:{label:"NSW",        color:"#f2a154"},
-  VK3:{label:"VIC",        color:"#f2d24a"},
-  VK4:{label:"QLD",        color:"#6bd17f"},
-  VK5:{label:"SA",         color:"#4fc2c2"},
-  VK6:{label:"WA",         color:"#4f8ef2"},
-  VK7:{label:"TAS",        color:"#a76bf2"},
-  VK8:{label:"NT",         color:"#e05ca0"},
-};
+    <div id="tab-settings" class="tab-panel">
+        <div class="grid">
+            <div class="card">
+                <h3>⚙️ Preferences</h3>
 
-const BASE = "https://www.wia.org.au/clubs/";
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Default callsign</div>
+                        <div class="settings-desc">Pre-fills the Track Station box on load</div>
+                    </div>
+                    <div class="settings-control">
+                        <input type="text" id="set-callsign" placeholder="VK4AHA">
+                    </div>
+                </div>
 
-const clubs = [
-// ---------------- VK1 : ACT ----------------
-{n:"Canberra Region Amateur Radio Club", s:"VK1", t:"Canberra ACT", lat:-35.2809,lng:149.1300, u:"vk1/CanberraRegionAmateurRadioClub/"},
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">aprs.fi API key</div>
+                        <div class="settings-desc">Free key from <a href="https://aprs.fi/page/api" target="_blank" style="color:#58a6ff;">aprs.fi/page/api</a> — enables live Track Station lookups. Saved to this browser only, never committed to the repo.</div>
+                    </div>
+                    <div class="settings-control">
+                        <input type="text" id="set-aprs-key" placeholder="paste key here" style="min-width: 220px; text-transform: none;">
+                    </div>
+                </div>
 
-// ---------------- VK2 : NSW ----------------
-{n:"Amateur Radio NSW", s:"VK2", t:"Sydney NSW", lat:-33.8688,lng:151.2093, u:"vk2/AmateurRadioNSW/", sw:true},
-{n:"Blue Mountains Amateur Radio Club", s:"VK2", t:"Katoomba NSW", lat:-33.7166,lng:150.3117, u:"vk2/BlueMountainsAmateurRadioClub/"},
-{n:"Chifley Amateur Radio Club", s:"VK2", t:"Mount Druitt NSW", lat:-33.7679,lng:150.8203, u:"vk2/ChifleyAmateurRadioClub/"},
-{n:"Fishers Ghost Amateur Radio Club", s:"VK2", t:"Campbelltown NSW", lat:-34.0648,lng:150.8143, u:"vk2/FishersGhostAmateurRadioClub/"},
-{n:"Hornsby & Districts Amateur Radio Club", s:"VK2", t:"Hornsby NSW", lat:-33.7042,lng:151.0989, u:"vk2/HornsbyAndDistrictsAmateurRadioClub/"},
-{n:"Manly-Warringah Radio Society", s:"VK2", t:"Manly NSW", lat:-33.7969,lng:151.2867, u:"vk2/ManlyWarringahRadioSociety/"},
-{n:"St George Amateur Radio Society", s:"VK2", t:"Kogarah NSW", lat:-33.9668,lng:151.1352, u:"vk2/StGeorgeAmateurRadioSociety/"},
-{n:"Waverley Amateur Radio Society", s:"VK2", t:"Waverley NSW", lat:-33.9022,lng:151.2564, u:"vk2/WaverleyAmateurRadioSociety/"},
-{n:"WICEN New South Wales", s:"VK2", t:"Sydney NSW", lat:-33.8688,lng:151.2093, u:"vk2/WICENNewSouthWales/", sw:true},
-{n:"Central Coast Amateur Radio Club", s:"VK2", t:"Gosford NSW", lat:-33.4257,lng:151.3428, u:"vk2/CentralCoastAmateurRadioClub/"},
-{n:"Great Lakes Radio Club", s:"VK2", t:"Forster NSW", lat:-32.1809,lng:152.5142, u:"vk2/GreatLakesRadioClub/"},
-{n:"Hunter Radio Group", s:"VK2", t:"Newcastle NSW", lat:-32.9283,lng:151.7817, u:"vk2/HunterRadioGroup/"},
-{n:"Port Stephens Amateur Radio Club", s:"VK2", t:"Nelson Bay NSW", lat:-32.7167,lng:152.1500, u:"vk2/PortStephensAmateurRadioClub/"},
-{n:"Westlakes Amateur Radio Club", s:"VK2", t:"Toronto NSW", lat:-33.0900,lng:151.6000, u:"vk2/WestlakesAmateurRadioClub/"},
-{n:"Clarence Valley Amateur Radio Group", s:"VK2", t:"Grafton NSW", lat:-29.6900,lng:152.9330, u:"vk2/ClarenceValleyAmateurRadioGroup/"},
-{n:"Coffs Harbour & District Amateur Radio Club", s:"VK2", t:"Coffs Harbour NSW", lat:-30.2963,lng:153.1157, u:"vk2/CoffsHarbourAndDistrictAmateurRadioClub/"},
-{n:"Oxley Region Amateur Radio Club", s:"VK2", t:"Port Macquarie NSW", lat:-31.4333,lng:152.9091, u:"vk2/OxleyRegionAmateurRadioClub/"},
-{n:"Summerland Amateur Radio Club", s:"VK2", t:"Lismore NSW", lat:-28.8135,lng:153.2773, u:"vk2/SummerlandAmateurRadioClub/"},
-{n:"Taree & District Amateur Radio Club", s:"VK2", t:"Taree NSW", lat:-31.9083,lng:152.4570, u:"vk2/TareeAndDistrictAmateurRadioClub/"},
-{n:"Wauchope Amateur Radio Club", s:"VK2", t:"Wauchope NSW", lat:-31.4614,lng:152.7328, u:"vk2/WauchopeAmateurRadioClub/"},
-{n:"Goulburn And Southern Highlands Amateur Radio Society", s:"VK2", t:"Goulburn NSW", lat:-34.7544,lng:149.7166, u:"vk2/GoulburnAndSouthernHighlandsAmateurRadioSociety/"},
-{n:"Illawarra Amateur Radio Society", s:"VK2", t:"Wollongong NSW", lat:-34.4278,lng:150.8931, u:"vk2/IllawarraAmateurRadioSociety/"},
-{n:"Mid South Coast Amateur Radio Club", s:"VK2", t:"Ulladulla NSW", lat:-35.3572,lng:150.4747, u:"vk2/MidSouthCoastAmateurRadioClub/"},
-{n:"Armidale & District Amateur Radio Club", s:"VK2", t:"Armidale NSW", lat:-30.5108,lng:151.6656, u:"vk2/ArmidaleAndDistrictAmateurRadioClub/"},
-{n:"North West Amateur Radio Group", s:"VK2", t:"Tamworth NSW", lat:-31.0927,lng:150.9188, u:"vk2/NorthWestAmateurRadioGroup/"},
-{n:"Walcha Radio Group", s:"VK2", t:"Walcha NSW", lat:-30.9944,lng:151.5528, u:"vk2/WalchaRadioGroup/"},
-{n:"Albury Wodonga Amateur Radio Club", s:"VK2", t:"Albury NSW", lat:-36.0737,lng:146.9135, u:"vk2/AlburyWodongaAmateurRadioClub/"},
-{n:"Wagga Wagga Amateur Radio Club", s:"VK2", t:"Wagga Wagga NSW", lat:-35.1082,lng:147.3598, u:"vk2/WaggaWaggaAmateurRadioClub/"},
-{n:"Orana Region Amateur Radio Club", s:"VK2", t:"Dubbo NSW", lat:-32.2431,lng:148.6019, u:"vk2/OranaRegionAmateurRadioClub/"},
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Auto-refresh live feeds</div>
+                        <div class="settings-desc">POTA/SOTA, DX Cluster & WSPR refresh every 60s when on</div>
+                    </div>
+                    <div class="toggle-switch" id="set-autorefresh" data-on="true"></div>
+                </div>
 
-// ---------------- VK3 : VIC ----------------
-{n:"Amateur Radio Victoria", s:"VK3", t:"Melbourne VIC", lat:-37.8136,lng:144.9631, u:"vk3/AmateurRadioVictoria/", sw:true},
-{n:"Eastern And Mountain District Radio Club", s:"VK3", t:"Belgrave VIC", lat:-37.9107,lng:145.3540, u:"vk3/EasternAndMountainDistrictRadioClub/"},
-{n:"Frankston & Mornington Peninsula Amateur Radio Club", s:"VK3", t:"Frankston VIC", lat:-38.1418,lng:145.1234, u:"vk3/FrankstonAndMorningtonPeninsulaAmateurRadioClub/"},
-{n:"Gippsland Gate Radio & Electronics Club", s:"VK3", t:"Longwarry VIC", lat:-38.1000,lng:145.7667, u:"vk3/GippslandGateRadioAndElectronicsClub/"},
-{n:"Melbourne Electronics And Radio Club", s:"VK3", t:"Melbourne VIC", lat:-37.8136,lng:144.9631, u:"vk3/MelbourneElectronicsAndRadioClub/"},
-{n:"Moorabbin And District Radio Club", s:"VK3", t:"Moorabbin VIC", lat:-37.9394,lng:145.0453, u:"vk3/MoorabbinAndDistrictRadioClub/"},
-{n:"North East Radio Group", s:"VK3", t:"Greensborough VIC", lat:-37.7000,lng:145.1000, u:"vk3/NorthEastRadioGroup/"},
-{n:"Society Of Communicators And Networkers International", s:"VK3", t:"Melbourne VIC", lat:-37.8136,lng:144.9631, u:"vk3/SocietyOfCommunicatorsAndNetworkersInternational/"},
-{n:"Scout Radio & Electronics Service Unit", s:"VK3", t:"Melbourne VIC", lat:-37.8136,lng:144.9631, u:"vk3/ScoutRadioAndElectronicsServiceUnit/"},
-{n:"Southern Peninsula Amateur Radio Club", s:"VK3", t:"Rosebud VIC", lat:-38.3667,lng:144.9000, u:"vk3/SouthernPeninsulaAmateurRadioClub/"},
-{n:"Victorian Amateur Radio Direction Finding Group", s:"VK3", t:"Melbourne VIC", lat:-37.8136,lng:144.9631, u:"vk3/VictorianAmateurRadioDirectionFindingGroup/"},
-{n:"Western & Northern Suburbs Amateur Radio Club", s:"VK3", t:"St Albans VIC", lat:-37.7472,lng:144.8038, u:"vk3/WesternAndNorthernSuburbsAmateurRadioClub/"},
-{n:"Wyndham Amateur Radio Club", s:"VK3", t:"Werribee VIC", lat:-37.9000,lng:144.6667, u:"vk3/WyndhamAmateurRadioClub/"},
-{n:"WICEN Victoria", s:"VK3", t:"Melbourne VIC", lat:-37.8136,lng:144.9631, u:"vk3/WICENVictoria/", sw:true},
-{n:"Yarra Valley Amateur Radio Group", s:"VK3", t:"Healesville VIC", lat:-37.6500,lng:145.5167, u:"vk3/YarraValleyAmateurRadioGroup/"},
-{n:"North East Victoria Amateur Radio Club", s:"VK3", t:"Wangaratta VIC", lat:-36.3583,lng:146.3167, u:"vk3/NorthEastVictoriaAmateurRadioClubInc/"},
-{n:"Shepparton & District Amateur Radio Club", s:"VK3", t:"Shepparton VIC", lat:-36.3833,lng:145.4000, u:"vk3/SheppartonAndDistrictAmateurRadioClub/"},
-{n:"Sunraysia Radio Group", s:"VK3", t:"Mildura VIC", lat:-34.1889,lng:142.1583, u:"vk3/SunraysiaRadioGroup/"},
-{n:"Eastern Zone Amateur Radio Club", s:"VK3", t:"Sale VIC", lat:-38.1058,lng:147.0669, u:"vk3/EasternZoneAmateurRadioClub/"},
-{n:"Vintage Radio Club of North East Victoria", s:"VK3", t:"Wangaratta VIC", lat:-36.3583,lng:146.3167, u:"vk3/VintageRadioClubOfNorthEastVictoria/"},
-{n:"Ballarat Amateur Radio Group", s:"VK3", t:"Ballarat VIC", lat:-37.5622,lng:143.8503, u:"vk3/BallaratAmateurRadioGroup/"},
-{n:"Bendigo Amateur Radio And Electronics Club", s:"VK3", t:"Bendigo VIC", lat:-36.7570,lng:144.2794, u:"vk3/BendigoAmateurRadioAndElectronicsClub/"},
-{n:"Central Goldfields Amateur Radio Group", s:"VK3", t:"Maryborough VIC", lat:-37.0500,lng:143.7333, u:"vk3/CentralGoldfieldsAmateurRadioGroup/"},
-{n:"Geelong Amateur Radio Club", s:"VK3", t:"Geelong VIC", lat:-38.1499,lng:144.3617, u:"vk3/GeelongAmateurRadioClub/"},
-{n:"Geelong Radio & Electronics Society", s:"VK3", t:"Geelong VIC", lat:-38.1499,lng:144.3617, u:"vk3/GeelongRadioAndElectronicsSociety/"},
-{n:"Macedon Ranges Amateur Radio Club", s:"VK3", t:"Woodend VIC", lat:-37.3667,lng:144.5333, u:"vk3/MacedonRangesAmateurRadioClub/"},
-{n:"Portland And Southwest Radio Group", s:"VK3", t:"Portland VIC", lat:-38.3333,lng:141.6000, u:"vk3/PortlandAndSouthwestRadioGroup/"},
-{n:"Wimmera Amateur Radio Group", s:"VK3", t:"Horsham VIC", lat:-36.7167,lng:142.2000, u:"vk3/WimmeraAmateurRadioGroup/"},
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">VK-only filter</div>
+                        <div class="settings-desc">Restrict POTA/SOTA & DX Cluster feeds to Australian stations</div>
+                    </div>
+                    <div class="toggle-switch on" id="set-vkonly" data-on="true"></div>
+                </div>
 
-// ---------------- VK4 : QLD ----------------
-{n:"Bayside District Amateur Radio Society", s:"VK4", t:"Wynnum QLD", lat:-27.4406,lng:153.1667, u:"vk4/BaysideAmateurRadioSociety/"},
-{n:"Border Ranges Amateur Radio Club", s:"VK4", t:"Beaudesert QLD", lat:-27.9833,lng:152.9833, u:"vk4/BorderRangesAmateurRadioClub/"},
-{n:"Brisbane Amateur Radio Club", s:"VK4", t:"Brisbane QLD", lat:-27.4698,lng:153.0251, u:"vk4/BrisbaneAmateurRadioClub/"},
-{n:"Brisbane Area WICEN Group", s:"VK4", t:"Brisbane QLD", lat:-27.4698,lng:153.0251, u:"vk4/WICENBrisbane/", sw:true},
-{n:"Brisbane VHF Group", s:"VK4", t:"Brisbane QLD", lat:-27.4698,lng:153.0251, u:"vk4/BrisbaneVHFGroup/"},
-{n:"Caboolture Radio Club", s:"VK4", t:"Caboolture QLD", lat:-27.0850,lng:152.9500, u:"vk4/CabooltureRadioClub/"},
-{n:"City of Brisbane Radio Society", s:"VK4", t:"Brisbane QLD", lat:-27.4698,lng:153.0251, u:"vk4/CityOfBrisbaneRadioSociety/"},
-{n:"Gold Coast Amateur Radio Society", s:"VK4", t:"Gold Coast QLD", lat:-28.0167,lng:153.4000, u:"vk4/GoldCoastAmateurRadioSociety/"},
-{n:"Gympie Communications And Electronics Group", s:"VK4", t:"Gympie QLD", lat:-26.1900,lng:152.6650, u:"vk4/GympieCommunicationsAndElectronicsGroup/"},
-{n:"Historical Wireless Society Of South East Queensland", s:"VK4", t:"Brisbane QLD", lat:-27.4698,lng:153.0251, u:"vk4/HistoricalWirelessSocietyOfSouthEastQueensland/"},
-{n:"Queensland Digital Group", s:"VK4", t:"Brisbane QLD", lat:-27.4698,lng:153.0251, u:"vk4/QueenslandDigitalGroup/", sw:true},
-{n:"Radio And Electronics School", s:"VK4", t:"Brisbane QLD", lat:-27.4698,lng:153.0251, u:"vk4/RadioAndElectronicsSchool/"},
-{n:"Redcliffe & District Radio Club", s:"VK4", t:"Redcliffe QLD", lat:-27.2306,lng:153.1128, u:"vk4/RedcliffeAndDistrictRadioClub/"},
-{n:"South East Queensland Repeater Association", s:"VK4", t:"Brisbane QLD", lat:-27.4698,lng:153.0251, u:"vk4/SouthEastQueenslandRepeaterAssociation/", sw:true},
-{n:"South Coast Amateur Radio Group", s:"VK4", t:"Gold Coast QLD", lat:-28.0167,lng:153.4000, u:"vk4/SouthCoastAmateurRadioGroup/"},
-{n:"Southside Amateur Radio Society", s:"VK4", t:"Sunnybank QLD", lat:-27.5667,lng:153.0567, u:"vk4/SouthsideAmateurRadioSociety/"},
-{n:"Sunshine Coast Amateur Radio Club", s:"VK4", t:"Nambour QLD", lat:-26.6270,lng:152.9590, u:"vk4/SunshineCoastAmateurRadioClub/"},
-{n:"Bundaberg Amateur Radio Club", s:"VK4", t:"Bundaberg QLD", lat:-24.8661,lng:152.3489, u:"vk4/BundabergAmateurRadioClub/"},
-{n:"Central Highlands Amateur Radio Club", s:"VK4", t:"Emerald QLD", lat:-23.5271,lng:148.1611, u:"vk4/CentralHighlandsAmateurRadioClub/"},
-{n:"Central Queensland Amateur Radio Association", s:"VK4", t:"Rockhampton QLD", lat:-23.3791,lng:150.5100, u:"vk4/CentralQueenslandAmateurRadioAssociation/"},
-{n:"Gladstone Amateur Radio Club", s:"VK4", t:"Gladstone QLD", lat:-23.8489,lng:151.2625, u:"vk4/GladstoneAmateurRadioClub/"},
-{n:"Hervey Bay Amateur Radio Club", s:"VK4", t:"Hervey Bay QLD", lat:-25.2986,lng:152.8517, u:"vk4/HerveyBayAmateurRadioClubInc/"},
-{n:"Mackay Amateur Radio Association", s:"VK4", t:"Mackay QLD", lat:-21.1550,lng:149.1650, u:"vk4/MackayAmateurRadioClub/"},
-{n:"Maryborough Electronics & Radio Group", s:"VK4", t:"Maryborough QLD", lat:-25.5333,lng:152.7000, u:"vk4/MaryboroughElectronicsAndRadioGroup/"},
-{n:"Rockhampton & District Amateur Radio Club", s:"VK4", t:"Rockhampton QLD", lat:-23.3791,lng:150.5100, u:"vk4/RockhamptonAndDistrictAmateurRadioClub/"},
-{n:"Cairns Amateur Radio Club", s:"VK4", t:"Cairns QLD", lat:-16.9186,lng:145.7781, u:"vk4/CairnsAmateurRadioClubInc/"},
-{n:"Mount Isa And District Amateur Radio Group", s:"VK4", t:"Mount Isa QLD", lat:-20.7256,lng:139.4927, u:"vk4/MountIsaAndDistrictAmateurRadioGroup/"},
-{n:"Tablelands Radio & Electronics Club", s:"VK4", t:"Atherton QLD", lat:-17.2667,lng:145.4833, u:"vk4/TablelandsRadioAndElectronicsClub/"},
-{n:"Townsville Amateur Radio Club", s:"VK4", t:"Townsville QLD", lat:-19.2590,lng:146.8169, u:"vk4/TownsvilleAmateurRadioClub/"},
-{n:"Bunya Mountains & District AmCom", s:"VK4", t:"Kingaroy QLD", lat:-26.5400,lng:151.8300, u:"vk4/BunyaMountainsAndDistrictAmcom/"},
-{n:"Darling Downs Radio Club", s:"VK4", t:"Toowoomba QLD", lat:-27.5606,lng:151.9539, u:"vk4/DarlingDownsRadioClub/"},
-{n:"Ipswich & District Radio Club", s:"VK4", t:"Ipswich QLD", lat:-27.6171,lng:152.7600, u:"vk4/IpswichAndDistrict/"},
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Antenna calculator units</div>
+                        <div class="settings-desc">Which unit is shown first in the antenna length calculator</div>
+                    </div>
+                    <div class="settings-control">
+                        <select id="set-units">
+                            <option value="both">Feet & Metres</option>
+                            <option value="metric">Metric first</option>
+                            <option value="imperial">Imperial first</option>
+                        </select>
+                    </div>
+                </div>
 
-// ---------------- VK5 : SA ----------------
-{n:"Adelaide Hills Amateur Radio Society", s:"VK5", t:"Stirling SA", lat:-35.0000,lng:138.7167, u:"vk5/AdelaideHillsAmateurRadioSociety/"},
-{n:"Air-Stream Wireless Incorporated", s:"VK5", t:"Adelaide SA", lat:-34.9285,lng:138.6007, u:"vk5/Air-StreamWirelessIncorporated/"},
-{n:"Amateur Radio Experimenters Group", s:"VK5", t:"Adelaide SA", lat:-34.9285,lng:138.6007, u:"vk5/AmateurRadioExperimentersGroup/"},
-{n:"CW Operators QRP Club", s:"VK5", t:"Adelaide SA", lat:-34.9285,lng:138.6007, u:"vk5/CwOperatorsQrpClubInc/"},
-{n:"Elizabeth Amateur Radio Club", s:"VK5", t:"Elizabeth SA", lat:-34.7167,lng:138.6667, u:"vk5/ElizabethAmateurRadioClub/"},
-{n:"Gawler Barossa ACRM SA", s:"VK5", t:"Gawler SA", lat:-34.5975,lng:138.7442, u:"vk5/ACRMGawlerBarossaDivision/"},
-{n:"North East Radio Club", s:"VK5", t:"Tea Tree Gully SA", lat:-34.8333,lng:138.6833, u:"vk5/NorthEastRadioClub/"},
-{n:"Port Adelaide Radio Club", s:"VK5", t:"Port Adelaide SA", lat:-34.8467,lng:138.5031, u:"vk5/PortAdelaideRadioClub/"},
-{n:"South Coast Amateur Radio Club", s:"VK5", t:"Christies Beach SA", lat:-35.1333,lng:138.4667, u:"vk5/SouthCoastAmateurRadioClub/"},
-{n:"SA Repeater Group", s:"VK5", t:"Adelaide SA", lat:-34.9285,lng:138.6007, u:"vk5/SARepeaterGroup/", sw:true},
-{n:"Scout Electronics Team", s:"VK5", t:"Adelaide SA", lat:-34.9285,lng:138.6007, u:"vk5/ScoutElectronicsTeam/"},
-{n:"WICEN South Australia", s:"VK5", t:"Adelaide SA", lat:-34.9285,lng:138.6007, u:"vk5/WICENSouthAustralia/", sw:true},
-{n:"Barossa Amateur Radio Club", s:"VK5", t:"Tanunda SA", lat:-34.5333,lng:138.9500, u:"vk5/BarossaAmateurRadioClub/"},
-{n:"Lower Murray Amateur Radio Club", s:"VK5", t:"Murray Bridge SA", lat:-35.1197,lng:139.2747, u:"vk5/LowerMurrayAmateurRadioClub/"},
-{n:"Trax FM Mid North Radio and Electronics Group", s:"VK5", t:"Port Pirie SA", lat:-33.1858,lng:138.0169, u:"vk5/TraxFm/"},
-{n:"Whyalla Amateur Radio Club", s:"VK5", t:"Whyalla SA", lat:-33.0333,lng:137.5667, u:"vk5/WhyallaAmateurRadioClub/"},
-{n:"Naracoorte Radio Club", s:"VK5", t:"Naracoorte SA", lat:-36.9583,lng:140.7333, u:"vk5/NaracoorteRadioClub/"},
-{n:"South East Radio Group", s:"VK5", t:"Mount Gambier SA", lat:-37.8283,lng:140.7828, u:"vk5/SouthEastRadioGroup/"},
-{n:"Riverland Radio Club", s:"VK5", t:"Berri SA", lat:-34.2833,lng:140.6000, u:"vk5/RiverlandRadioClub/"},
+                <div class="settings-save-bar">
+                    <button id="settings-save-btn">Save Settings</button>
+                    <button id="settings-reset-btn" style="background:#21262d; border:1px solid #30363d; color:#c9d1d9;">Reset to Defaults</button>
+                    <span id="settings-saved-msg">✓ Saved</span>
+                </div>
+                <p class="warning-note">Saved to this browser's localStorage only — nothing is sent anywhere, and settings don't sync between devices.</p>
+            </div>
 
-// ---------------- VK6 : WA ----------------
-{n:"Mid West Radio Group", s:"VK6", t:"Geraldton WA", lat:-28.7744,lng:114.6089, u:"vk6/MidWestRadioGroup/"},
-{n:"Northern Corridor Radio Group", s:"VK6", t:"Joondalup WA", lat:-31.7444,lng:115.7661, u:"vk6/NorthernCorridorRadioGroup/"},
-{n:"Northside Radio Association", s:"VK6", t:"Balcatta WA", lat:-31.8667,lng:115.8167, u:"vk6/NorthsideRadioAssociation/"},
-{n:"Bunbury Radio Club", s:"VK6", t:"Bunbury WA", lat:-33.3271,lng:115.6414, u:"vk6/BunburyRadioClub/"},
-{n:"Ham College", s:"VK6", t:"Perth WA", lat:-31.9505,lng:115.8605, u:"vk6/HamCollege/"},
-{n:"Peel Amateur Radio Group", s:"VK6", t:"Mandurah WA", lat:-32.5269,lng:115.7217, u:"vk6/PeelAmateurRadioGroup/"},
-{n:"Southern Electronics Group WA", s:"VK6", t:"Rockingham WA", lat:-32.2767,lng:115.7297, u:"vk6/SouthernElectronicsGroupWA/"},
-{n:"Hills Amateur Radio Group", s:"VK6", t:"Kalamunda WA", lat:-31.9744,lng:116.0578, u:"vk6/HillsAmateurRadioGroup/"},
-{n:"WA Amateur Radio News", s:"VK6", t:"Perth WA", lat:-31.9505,lng:115.8605, u:"vk6/WaAmateurRadioNews/", sw:true},
-{n:"Western Australian Low Frequency Experimenters Group", s:"VK6", t:"Perth WA", lat:-31.9505,lng:115.8605, u:"vk6/WesternAustralianLowFrequencyExperimentersGroup/"},
-{n:"West Australian VHF Group", s:"VK6", t:"Perth WA", lat:-31.9505,lng:115.8605, u:"vk6/WestAustralianVHFGroup/"},
-{n:"West Australian Repeater Group", s:"VK6", t:"Perth WA", lat:-31.9505,lng:115.8605, u:"vk6/WestAustralianRepeaterGroup/", sw:true},
-{n:"WICEN West Australia", s:"VK6", t:"Perth WA", lat:-31.9505,lng:115.8605, u:"vk6/WICENWestAustralia/", sw:true},
+            <div class="card">
+                <h3>🗺️ Default Map View</h3>
+                <p style="font-size: 0.8rem; color: #8b949e; margin: 0 0 0.75rem;">Where the APRS map and satellite location default to on page load.</p>
+                <div class="locator-row">
+                    <input type="text" id="set-map-lat" placeholder="Lat (-27.47)">
+                    <input type="text" id="set-map-lon" placeholder="Lon (153.02)">
+                </div>
+                <div class="locator-row">
+                    <input type="text" id="set-map-zoom" placeholder="Zoom (6)">
+                </div>
+                <button id="set-map-use-current" style="width: 100%; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; margin-bottom: 0.5rem;">Use Current Map View</button>
+                <div class="settings-save-bar" style="margin-top: 0;">
+                    <button id="settings-map-save-btn">Save Default View</button>
+                </div>
+            </div>
 
-// ---------------- VK7 : TAS ----------------
-{n:"Northern Tasmania Amateur Radio Club", s:"VK7", t:"Launceston TAS", lat:-41.4332,lng:147.1441, u:"vk7/NorthernTasmaniaAmateurRadioClub/"},
-{n:"Radio & Electronics Association of Southern Tasmania", s:"VK7", t:"Hobart TAS", lat:-42.8821,lng:147.3272, u:"vk7/RadioAndElectronicsAssociationOfSouthernTasmania/"},
-{n:"North West Tasmania Amateur Radio Club", s:"VK7", t:"Burnie TAS", lat:-41.0553,lng:145.9058, u:"vk7/NorthWestTasmaniaAmateurRadioClub/"},
+            <div class="card">
+                <h3>ℹ️ About This Build</h3>
+                <p style="font-size: 0.8rem; line-height: 1.6; color: #c9d1d9;">
+                    Built by <b>VK4AHA</b> for the Hack Club Stardance program. Live data sources: aprs.fi (station tracking, key required), POTA/SOTA public spot APIs, wspr.live, and dxsummit.fi. Satellite passes use live TLEs from Celestrak with SGP4 propagation via satellite.js, computed client-side — no backend, no tracking, no accounts.
+                </p>
+                <div class="grid-matrix" style="margin-top: 0.75rem;">
+                    <a href="https://qrz.com/db/VK4AHA" target="_blank" class="grid-link">Sam's QRZ Page</a>
+                    <a href="https://hackclub.com/" target="_blank" class="grid-link">Hack Club</a>
+                </div>
+            </div>
+        </div>
+    </div><!-- /#tab-settings -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.3/satellite.min.js"></script>
+    <script>
+        // Synchronous Live UTC Clock Engine
+        function updateClock() {
+            const now = new Date();
+            const utcTime = now.toISOString().substr(11, 8);
+            const clockEl = document.getElementById('utc-clock');
+            if (clockEl) clockEl.textContent = utcTime + " UTC";
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
 
-// ---------------- VK8 : NT ----------------
-{n:"Alice Springs Amateur Radio Club", s:"VK8", t:"Alice Springs NT", lat:-23.6980,lng:133.8807, u:"vk8/AliceSpringsAmateurRadioClub/"},
-{n:"Darwin Amateur Radio Club", s:"VK8", t:"Darwin NT", lat:-12.4634,lng:130.8456, u:"vk8/DarwinAmateurRadioClub/"},
-{n:"Wireless Institute Civil Emergency Network NT", s:"VK8", t:"Darwin NT", lat:-12.4634,lng:130.8456, u:"vk8/WicenNTInc/", sw:true},
-];
+        // Initialize Leaflet Map
+        // FIX: the world basemap was repeating infinitely as you panned east/west.
+        // That's Leaflet's default horizontal wrap behaviour for a slippy map, not a bug in the
+        // tile URL itself — so we lock it down: noWrap on the tile layer stops it requesting
+        // duplicate copies of the world, and setMaxBounds() stops the viewport from panning/
+        // dragging past the edge of the single world copy.
+        const worldBounds = L.latLngBounds(L.latLng(-90, -180), L.latLng(90, 180));
 
-// National organisations with no fixed physical clubhouse (listed, not mapped)
-const nationalOrgs = [
-{n:"Australian Ladies Amateur Radio Association (ALARA)", s:"VK1", u:"vk1/AustralianLadiesAmateurRadioAssociation/"},
-{n:"Radio Amateurs Old Timers Club (RAOTC)", s:"VK1", u:"vk1/RadioAmateursOldTimersClub/"},
-{n:"Rotarians of Amateur Radio ANZO Region", s:"VK1", u:"vk1/RotariansOfAmateurRadio/"},
-{n:"South Pacific Contest Club", s:"VK1", u:"vk1/SouthPacificContestClub/"},
-{n:"Volunteer Examiners Australia (VEA)", s:"VK1", u:"vk1/VolunteerExaminersAustralia/"},
-];
+        const map = L.map('aprs-map', {
+            maxBounds: worldBounds,
+            maxBoundsViscosity: 1.0, // fully "solid" edges, no rubber-banding past the map edge
+            worldCopyJump: false,
+            minZoom: 2
+        }).setView([-27.4700, 153.0210], 6); // Default View near South East QLD
 
-// ---------------------------------------------------------------------------
-// MAP INIT
-// ---------------------------------------------------------------------------
-try {
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            noWrap: true,       // don't tile the basemap repeatedly across the antimeridian
+            bounds: worldBounds // only request tiles that fall within a single world copy
+        }).addTo(map);
 
-const map = L.map('map', {zoomControl:true}).setView([-27, 133], 4.4);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  subdomains: 'abc',
-  maxZoom: 19
-}).addTo(map);
+        // --- Map status banner helper (used by grid/greyline/tracking below) ---
+        function showMapNotice(msg) {
+            const el = document.getElementById('map-status');
+            if (!el) return;
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+        function hideMapNotice() {
+            const el = document.getElementById('map-status');
+            if (el) el.style.display = 'none';
+        }
 
-function makeIcon(color, isSW){
-  return L.divIcon({
-    className:'',
-    html:`<div style="
-        width:${isSW?16:14}px;height:${isSW?16:14}px;border-radius:50%;
-        background:${color};border:2px solid #0f1115;
-        box-shadow:0 0 0 2px ${color}55;${isSW?'outline:2px dashed #ffffffaa;outline-offset:2px;':''}
-      "></div>`,
-    iconSize:[16,16], iconAnchor:[8,8], popupAnchor:[0,-8]
-  });
-}
+        // --- Toggle Grid (lat/lon graticule) — no API key required ---
+        let gridLayer = null;
+        let gridVisible = false;
+        function buildGraticule() {
+            const layer = L.layerGroup();
+            const style = { color: '#30363d', weight: 1, opacity: 0.8, interactive: false };
+            for (let lat = -60; lat <= 60; lat += 30) {
+                L.polyline([[lat, -180], [lat, 180]], style).addTo(layer);
+            }
+            for (let lon = -180; lon <= 180; lon += 30) {
+                L.polyline([[-85, lon], [85, lon]], style).addTo(layer);
+            }
+            L.polyline([[0, -180], [0, 180]], { color: '#58a6ff', weight: 1, opacity: 0.6, interactive: false }).addTo(layer);
+            return layer;
+        }
+        const toggleGridBtn = document.getElementById('toggle-grid-btn');
+        if (toggleGridBtn) {
+            toggleGridBtn.addEventListener('click', () => {
+                if (!gridLayer) gridLayer = buildGraticule();
+                if (gridVisible) {
+                    map.removeLayer(gridLayer);
+                } else {
+                    gridLayer.addTo(map);
+                }
+                gridVisible = !gridVisible;
+                toggleGridBtn.style.background = gridVisible ? '#ec4899' : '#21262d';
+                toggleGridBtn.style.color = gridVisible ? '#fff' : '#c9d1d9';
+            });
+        }
 
-const markers = [];
-clubs.forEach((c,i)=>{
-  const color = STATE_INFO[c.s].color;
-  const marker = L.marker([c.lat,c.lng], {icon: makeIcon(color, c.sw)});
-  marker.bindPopup(`
-    <div class="popup">
-      <span class="region" style="color:${color}">${c.s} · ${STATE_INFO[c.s].label}</span>
-      <h3>${c.n}</h3>
-      <p>${c.t}${c.sw?' · state-wide organisation':''}</p>
-      <a href="${BASE}${c.u}" target="_blank" rel="noopener">View club page →</a>
-      ${c.sw?'<div class="approx-note">📍 Pin marks the region hub, not a physical clubhouse.</div>':'<div class="approx-note">📍 Approximate location (town-level, from club name/region).</div>'}
-    </div>
-  `);
-  marker.addTo(map);
-  markers.push({marker, data:c, idx:i});
-});
+        // --- Toggle Greyline (day/night terminator) — no API key required ---
+        let greylineLayer = null;
+        let greylineVisible = false;
+        let greylineInterval = null;
 
-// ---------------------------------------------------------------------------
-// SIDEBAR: state filter chips
-// ---------------------------------------------------------------------------
-const activeStates = new Set(Object.keys(STATE_INFO));
-const filtersEl = document.getElementById('stateFilters');
-Object.entries(STATE_INFO).forEach(([code,info])=>{
-  const chip = document.createElement('div');
-  chip.className = 'chip active';
-  chip.dataset.state = code;
-  chip.textContent = `${code} · ${info.label}`;
-  chip.addEventListener('click', ()=>{
-    if(activeStates.has(code)){ activeStates.delete(code); chip.classList.remove('active'); }
-    else { activeStates.add(code); chip.classList.add('active'); }
-    render();
-  });
-  filtersEl.appendChild(chip);
-});
+        function computeSolarParams(date) {
+            const start = new Date(date.getFullYear(), 0, 0);
+            const diff = date - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dayOfYear = Math.floor(diff / oneDay);
+            const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
+            const gamma = (2 * Math.PI / 365) * (dayOfYear - 1 + (utcHours - 12) / 24);
+            const eqtime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
+            const decl = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma) - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma) - 0.002697 * Math.cos(3 * gamma) + 0.00148 * Math.sin(3 * gamma);
+            const subsolarLon = -15 * (utcHours - 12 + eqtime / 60);
+            const subsolarLat = decl * 180 / Math.PI;
+            return { subsolarLat, subsolarLon, declRad: decl };
+        }
 
-// ---------------------------------------------------------------------------
-// LIST + SEARCH + RENDER
-// ---------------------------------------------------------------------------
-const listEl = document.getElementById('list');
-const countEl = document.getElementById('count');
-const searchEl = document.getElementById('search');
+        function buildTerminator() {
+            const { subsolarLat, subsolarLon, declRad } = computeSolarParams(new Date());
+            const points = [];
+            for (let lon = -180; lon <= 180; lon += 2) {
+                const dlon = (lon - subsolarLon) * Math.PI / 180;
+                const safeDecl = Math.abs(declRad) < 0.0005 ? (declRad < 0 ? -0.0005 : 0.0005) : declRad;
+                let lat = Math.atan(-Math.cos(dlon) / Math.tan(safeDecl)) * 180 / Math.PI;
+                lat = Math.max(-89, Math.min(89, lat));
+                points.push([lat, lon]);
+            }
+            const nightPole = subsolarLat > 0 ? -90 : 90;
+            const shadePoints = [...points, [nightPole, 180], [nightPole, -180]];
+            const layer = L.layerGroup();
+            L.polyline(points, { color: '#eab308', weight: 2, opacity: 0.8, dashArray: '4 4', interactive: false }).addTo(layer);
+            L.polygon(shadePoints, { stroke: false, fillColor: '#000', fillOpacity: 0.35, interactive: false }).addTo(layer);
+            return layer;
+        }
 
-function render(){
-  const q = searchEl.value.trim().toLowerCase();
-  let visibleCount = 0;
-  listEl.innerHTML = '';
-  markers.forEach(({marker,data})=>{
-    const matchesState = activeStates.has(data.s);
-    const matchesSearch = !q || data.n.toLowerCase().includes(q) || data.t.toLowerCase().includes(q) || data.s.toLowerCase().includes(q);
-    const show = matchesState && matchesSearch;
-    if(show){
-      marker.setOpacity(1);
-      if(!map.hasLayer(marker)) marker.addTo(map);
-      visibleCount++;
-      const item = document.createElement('div');
-      item.className = 'club-item';
-      item.innerHTML = `<span class="dot" style="background:${STATE_INFO[data.s].color}"></span><span class="name">${data.n}</span><div class="meta">${data.t} · ${data.s}</div>`;
-      item.addEventListener('click', ()=>{
-        map.setView([data.lat,data.lng], 11, {animate:true});
-        marker.openPopup();
-      });
-      listEl.appendChild(item);
-    } else {
-      if(map.hasLayer(marker)) map.removeLayer(marker);
-    }
-  });
-  countEl.textContent = `Showing ${visibleCount} of ${clubs.length} clubs`;
-}
-searchEl.addEventListener('input', render);
-render();
+        const toggleGreylineBtn = document.getElementById('toggle-greyline-btn');
+        if (toggleGreylineBtn) {
+            toggleGreylineBtn.addEventListener('click', () => {
+                if (greylineVisible) {
+                    if (greylineLayer) map.removeLayer(greylineLayer);
+                    if (greylineInterval) clearInterval(greylineInterval);
+                    greylineVisible = false;
+                    toggleGreylineBtn.style.background = '#21262d';
+                    toggleGreylineBtn.style.color = '#c9d1d9';
+                } else {
+                    greylineLayer = buildTerminator();
+                    greylineLayer.addTo(map);
+                    greylineInterval = setInterval(() => {
+                        map.removeLayer(greylineLayer);
+                        greylineLayer = buildTerminator();
+                        greylineLayer.addTo(map);
+                    }, 60000);
+                    greylineVisible = true;
+                    toggleGreylineBtn.style.background = '#ec4899';
+                    toggleGreylineBtn.style.color = '#fff';
+                }
+            });
+        }
 
-// National orgs panel
-const nationalListEl = document.getElementById('nationalList');
-nationalOrgs.forEach(o=>{
-  const item = document.createElement('div');
-  item.className = 'club-item national';
-  item.innerHTML = `<span class="dot" style="background:${STATE_INFO[o.s].color}"></span><span class="name">${o.n}</span><div class="meta">No fixed clubhouse · <a href="${BASE}${o.u}" target="_blank" style="color:var(--accent);">club page</a></div>`;
-  nationalListEl.appendChild(item);
-});
+        // --- Station Plotting (APRS.fi lookup) — needs a free API key from https://aprs.fi/page/api ---
+        // Dear HackClub Reviewer: paste a free aprs.fi key into the Settings tab to enable this —
+        // it's saved to this browser's localStorage only, never committed to the repo.
+        // Grid/greyline overlays work with no key at all.
+        //
+        // NOTE: aprs.fi's free API intentionally does not support area/bounding-box search — it
+        // only returns data for callsigns you explicitly name (max 20 per request). So this is a
+        // "watch list" you plot on demand, not a live auto-populate-everything-in-view feed.
 
-// Legend
-const legendEl = document.getElementById('legend');
-legendEl.innerHTML = '<div style="font-weight:700;margin-bottom:6px;">Legend</div>' +
-  Object.entries(STATE_INFO).map(([code,info])=>`<div class="row"><span class="sw" style="background:${info.color}"></span>${code} — ${info.label}</div>`).join('') +
-  '<div class="row" style="margin-top:6px;"><span class="sw" style="background:#fff;outline:2px dashed #ffffffaa;"></span>Dashed ring = state-wide org</div>';
+        // Rough mapping of common APRS primary/alternate table symbol codes to an icon + label.
+        // Not the full ~250-symbol APRS table — covers the common ham cases, falls back to a
+        // plain marker for anything unmapped.
+        const APRS_SYMBOL_MAP = {
+            '-': { emoji: '🏠', label: 'House' },
+            '>': { emoji: '🚗', label: 'Car' },
+            'k': { emoji: '🚚', label: 'Truck' },
+            'b': { emoji: '🚲', label: 'Bicycle' },
+            'v': { emoji: '🚐', label: 'Van' },
+            'j': { emoji: '🚙', label: 'Jeep' },
+            'U': { emoji: '🚌', label: 'Bus' },
+            'a': { emoji: '🚑', label: 'Ambulance' },
+            'f': { emoji: '🚒', label: 'Fire Truck' },
+            'Y': { emoji: '⛵', label: 'Sailboat' },
+            's': { emoji: '🚢', label: 'Ship' },
+            'O': { emoji: '🎈', label: 'Balloon' },
+            '_': { emoji: '🌦️', label: 'Weather Station' },
+            '#': { emoji: '📡', label: 'Digipeater' },
+            'r': { emoji: '📻', label: 'Repeater' },
+            'g': { emoji: '✈️', label: 'Glider' },
+            '^': { emoji: '✈️', label: 'Aircraft' },
+            ';': { emoji: '⛺', label: 'Campground' },
+            'P': { emoji: '👮', label: 'Police' },
+            'H': { emoji: '🏨', label: 'Hotel' }
+        };
+        function getAprsSymbol(symbolStr) {
+            if (!symbolStr) return { emoji: '📍', label: 'Station' };
+            const code = symbolStr.slice(-1); // last char is the symbol code, first is the table selector
+            return APRS_SYMBOL_MAP[code] || { emoji: '📍', label: 'Station' };
+        }
+        function buildStationIcon(emoji) {
+            return L.divIcon({
+                className: 'aprs-station-icon',
+                html: `<div style="background:#161b22; border:2px solid #ec4899; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 0 6px rgba(236,72,153,0.6);">${emoji}</div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+                popupAnchor: [0, -16]
+            });
+        }
 
-} catch (err) {
-  console.error(err);
-  showError('Map failed to initialize: ' + err.message);
-}
-</script>
+        const stationMarkersLayer = L.layerGroup().addTo(map);
+
+        async function trackStation() {
+            hideMapNotice();
+            const raw = document.getElementById('callsign-input').value.trim();
+            if (!raw) {
+                showMapNotice('Enter one or more callsigns, comma-separated, e.g. VK3RHD-1, VK4AHA');
+                return;
+            }
+            const calls = [...new Set(raw.split(',').map(c => c.trim().toUpperCase()).filter(Boolean))].slice(0, 20);
+            if (!calls.length) return;
+            if (!appSettings.aprsApiKey) {
+                showMapNotice('Station plotting needs a free aprs.fi API key — get one at aprs.fi/page/api and paste it into the Settings tab.');
+                return;
+            }
+            const searchBtn = document.getElementById('search-btn');
+            const originalLabel = searchBtn.textContent;
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Plotting...';
+            try {
+                const res = await fetch(`https://api.aprs.fi/api/get?name=${encodeURIComponent(calls.join(','))}&what=loc&apikey=${appSettings.aprsApiKey}&format=json`);
+                const data = await res.json();
+                stationMarkersLayer.clearLayers();
+
+                if (!data.entries || data.entries.length === 0) {
+                    showMapNotice(`No recent position found for: ${calls.join(', ')}`);
+                    return;
+                }
+
+                const bounds = [];
+                data.entries.forEach(entry => {
+                    const lat = parseFloat(entry.lat);
+                    const lon = parseFloat(entry.lng);
+                    if (isNaN(lat) || isNaN(lon)) return;
+                    const sym = getAprsSymbol(entry.symbol);
+                    const ageMin = entry.lasttime ? Math.round((Date.now() / 1000 - parseInt(entry.lasttime, 10)) / 60) : null;
+                    const ageStr = ageMin === null ? 'unknown' : (ageMin < 60 ? `${ageMin}m ago` : `${Math.round(ageMin / 60)}h ago`);
+                    L.marker([lat, lon], { icon: buildStationIcon(sym.emoji) }).addTo(stationMarkersLayer)
+                        .bindPopup(`<b>${entry.name}</b> — ${sym.label}<br>${entry.comment ? entry.comment : 'No comment'}<br><span style="color:#8b949e; font-size:0.75rem;">Updated ${ageStr}</span>`);
+                    bounds.push([lat, lon]);
+                });
+
+                if (bounds.length === 1) {
+                    map.setView(bounds[0], 10);
+                } else if (bounds.length > 1) {
+                    map.fitBounds(bounds, { padding: [40, 40] });
+                }
+
+                const foundNames = new Set(data.entries.map(e => e.name));
+                const notFound = calls.filter(c => !foundNames.has(c));
+                if (notFound.length) showMapNotice(`No recent data for: ${notFound.join(', ')}`);
+            } catch (err) {
+                showMapNotice('Lookup failed — check your connection or API key.');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = originalLabel;
+            }
+        }
+        const searchBtn = document.getElementById('search-btn');
+        if (searchBtn) searchBtn.addEventListener('click', trackStation);
+        const callsignInput = document.getElementById('callsign-input');
+        if (callsignInput) {
+            callsignInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') trackStation();
+            });
+        }
+
+        // Phonetic dataset generation
+        const alphabetData = [
+            { L: 'A', W: 'Alpha', P: 'AL-FAH' }, { L: 'B', W: 'Bravo', P: 'BRAH-VOH' },
+            { L: 'C', W: 'Charlie', P: 'CHAR-LEE' }, { L: 'D', W: 'Delta', P: 'DELL-TAH' },
+            { L: 'E', W: 'Echo', P: 'ECK-OH' }, { L: 'F', W: 'Foxtrot', P: 'FOKS-TROT' },
+            { L: 'G', W: 'Golf', P: 'GOLF' }, { L: 'H', W: 'Hotel', P: 'HOH-TELL' },
+            { L: 'I', W: 'India', P: 'IN-DEE-AH' }, { L: 'J', W: 'Juliet', P: 'JEW-LEE-ETT' },
+            { L: 'K', W: 'Kilo', P: 'KEY-LOH' }, { L: 'L', W: 'Lima', P: 'LEE-MAH' },
+            { L: 'M', W: 'Mike', P: 'MIKE' }, { L: 'N', W: 'November', P: 'NOH-VEM-BER' },
+            { L: 'O', W: 'Oscar', P: 'OSS-CAH' }, { L: 'P', W: 'Papa', P: 'PAH-PAH' },
+            { L: 'Q', W: 'Quebec', P: 'KEH-BEC' }, { L: 'R', W: 'Romeo', P: 'ROW-ME-OH' },
+            { L: 'S', W: 'Sierra', P: 'SEE-AIR-RAH' }, { L: 'T', W: 'Tango', P: 'TANG-GO' },
+            { L: 'U', W: 'Uniform', P: 'YOU-NEE-FORM' }, { L: 'V', W: 'Victor', P: 'VIK-TAH' },
+            { L: 'W', W: 'Whiskey', P: 'WISS-KEY' }, { L: 'X', W: 'X-ray', P: 'ECKS-RAY' },
+            { L: 'Y', W: 'Yankee', P: 'YANG-KEY' }, { L: 'Z', W: 'Zulu', P: 'ZOO-LOO' }
+        ];
+
+        const matrixContainer = document.getElementById('phonetic-matrix');
+        if (matrixContainer) {
+            matrixContainer.innerHTML = '';
+            alphabetData.forEach(item => {
+                const box = document.createElement('div');
+                box.className = 'alpha-box';
+                box.innerHTML = `
+                    <div class="alpha-letter">${item.L}</div>
+                    <div class="alpha-popup">
+                        <div class="popup-word">${item.W}</div>
+                        <div class="popup-voice">[${item.P}]</div>
+                    </div>
+                `;
+                matrixContainer.appendChild(box);
+            });
+        }
+
+        // Q-Code dataset generation
+        const qcodeData = [
+            { L: 'QRZ', W: 'Who is calling?', P: 'Also: "you are being called by..."' },
+            { L: 'QRM', W: 'Interference', P: 'Man-made / other stations' },
+            { L: 'QRN', W: 'Static noise', P: 'Natural / atmospheric' },
+            { L: 'QSB', W: 'Fading signal', P: 'Signal strength varying' },
+            { L: 'QSO', W: 'A contact', P: 'Conversation with a station' },
+            { L: 'QSY', W: 'Change frequency', P: 'Move to another freq' },
+            { L: 'QTH', W: 'Location', P: 'Your station location' },
+            { L: 'QRP', W: 'Low power', P: 'Typically <=5W' },
+            { L: 'QRO', W: 'High power', P: 'Increase transmit power' },
+            { L: 'QSL', W: 'Confirm receipt', P: 'Acknowledge / confirm' },
+            { L: 'QRT', W: 'Stop transmitting', P: 'Shutting down station' },
+            { L: 'QRV', W: 'Ready to operate', P: 'Available for contact' }
+        ];
+
+        const qcodeContainer = document.getElementById('qcode-matrix');
+        if (qcodeContainer) {
+            qcodeContainer.innerHTML = '';
+            qcodeData.forEach(item => {
+                const box = document.createElement('div');
+                box.className = 'alpha-box';
+                box.style.minWidth = '85px';
+                box.innerHTML = `
+                    <div class="alpha-letter" style="font-size: 0.95rem;">${item.L}</div>
+                    <div class="alpha-popup" style="width: 170px;">
+                        <div class="popup-word">${item.W}</div>
+                        <div class="popup-voice">${item.P}</div>
+                    </div>
+                `;
+                qcodeContainer.appendChild(box);
+            });
+        }
+
+        // Morse Translation Code logic
+        const morseCodeMap = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 'G': '--.', 'H': '....',
+            'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---', 'P': '.--.',
+            'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', '3': '...--', '4': '....-', '5': '.....',
+            '6': '-....', '7': '--...', '8': '---..', '9': '----.', '0': '-----'
+        };
+
+        const cwBtn = document.getElementById('cw-btn');
+        if (cwBtn) {
+            cwBtn.addEventListener('click', () => {
+                const text = document.getElementById('cw-input').value.trim().toUpperCase();
+                const output = text.split('').map(char => morseCodeMap[char] || (char === ' ' ? '/' : '')).join(' ');
+                document.getElementById('cw-output').textContent = output || 'Invalid Input';
+            });
+        }
+
+        // --- Maidenhead Grid Locator ---
+        function latLonToGrid(lat, lon) {
+            lat = parseFloat(lat); lon = parseFloat(lon);
+            if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) return null;
+            lon += 180; lat += 90;
+            const A = Math.floor(lon / 20);
+            const B = Math.floor(lat / 10);
+            lon %= 20; lat %= 10;
+            const C = Math.floor(lon / 2);
+            const D = Math.floor(lat / 1);
+            lon = (lon - 2 * C) * 60; lat = (lat - D) * 60;
+            const E = Math.floor(lon / 5);
+            const F = Math.floor(lat / 2.5);
+            return String.fromCharCode(65 + A) + String.fromCharCode(65 + B) + C + D +
+                   String.fromCharCode(97 + E) + String.fromCharCode(97 + F);
+        }
+
+        const locCalcBtn = document.getElementById('loc-calc-btn');
+        if (locCalcBtn) {
+            locCalcBtn.addEventListener('click', () => {
+                const lat = document.getElementById('loc-lat').value.trim();
+                const lon = document.getElementById('loc-lon').value.trim();
+                const grid = latLonToGrid(lat, lon);
+                document.getElementById('loc-output').textContent = grid ? grid.toUpperCase() : 'Invalid coords';
+            });
+        }
+
+        const locGeoBtn = document.getElementById('loc-geo-btn');
+        if (locGeoBtn) {
+            locGeoBtn.addEventListener('click', () => {
+                if (!navigator.geolocation) {
+                    document.getElementById('loc-output').textContent = 'No geolocation';
+                    return;
+                }
+                document.getElementById('loc-output').textContent = 'Locating...';
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const { latitude, longitude } = pos.coords;
+                        document.getElementById('loc-lat').value = latitude.toFixed(4);
+                        document.getElementById('loc-lon').value = longitude.toFixed(4);
+                        const grid = latLonToGrid(latitude, longitude);
+                        document.getElementById('loc-output').textContent = grid ? grid.toUpperCase() : 'Calc error';
+                    },
+                    () => { document.getElementById('loc-output').textContent = 'Permission denied'; }
+                );
+            });
+        }
+
+        // --- NCDXF/IARU Beacon Tracker ---
+        const beaconOrder = [
+            '4U1UN', 'VE8AT', 'W6WX', 'KH6WO', 'ZL6B', 'VK6RBP', 'JA2IGY', 'RR9O',
+            'VR2B', '4S7B', 'ZS6DN', '5Z4B', '4X6TU', 'OH2B', 'CS3B', 'LU4AA', 'OA4B', 'YV5B'
+        ];
+        const beaconBands = ['14.100 MHz', '18.110 MHz', '21.150 MHz', '24.930 MHz', '28.200 MHz'];
+
+        function updateBeaconTracker() {
+            const nowSec = Math.floor(Date.now() / 1000);
+            const cyclePos = nowSec % 900; 
+            const beaconIndex = Math.floor(cyclePos / 50);
+            const withinBeacon = cyclePos % 50;
+            const bandIndex = Math.floor(withinBeacon / 10);
+            const secondsIntoSlot = withinBeacon % 10;
+            const countdown = 10 - secondsIntoSlot;
+
+            const callEl = document.getElementById('beacon-call');
+            const bandEl = document.getElementById('beacon-band');
+            const cdEl = document.getElementById('beacon-countdown');
+            if (callEl) callEl.textContent = beaconOrder[beaconIndex] || '--';
+            if (bandEl) bandEl.textContent = beaconBands[bandIndex] || '--';
+            if (cdEl) cdEl.textContent = countdown;
+        }
+        setInterval(updateBeaconTracker, 1000);
+        updateBeaconTracker();
+
+        // --- Antenna Length Calculator ---
+        const antCalcBtn = document.getElementById('ant-calc-btn');
+        if (antCalcBtn) {
+            antCalcBtn.addEventListener('click', () => {
+                const freq = parseFloat(document.getElementById('ant-freq').value);
+                const outputEl = document.getElementById('ant-output');
+                if (!freq || freq <= 0) {
+                    outputEl.innerHTML = 'Enter a valid frequency in MHz';
+                    return;
+                }
+                const dipoleFt = 468 / freq;
+                const verticalFt = 234 / freq;
+                const dipoleM = dipoleFt * 0.3048;
+                const verticalM = verticalFt * 0.3048;
+                outputEl.innerHTML = `
+                    Dipole (½λ): ${dipoleFt.toFixed(2)} ft / ${dipoleM.toFixed(2)} m (${(dipoleFt/2).toFixed(2)} ft per leg)<br>
+                    Vertical (¼λ): ${verticalFt.toFixed(2)} ft / ${verticalM.toFixed(2)} m
+                `;
+            });
+        }
+
+        // --- SWR / Return Loss Calculator ---
+        const swrCalcBtn = document.getElementById('swr-calc-btn');
+        if (swrCalcBtn) {
+            swrCalcBtn.addEventListener('click', () => {
+                const fwd = parseFloat(document.getElementById('swr-fwd').value);
+                const ref = parseFloat(document.getElementById('swr-ref').value);
+                const outputEl = document.getElementById('swr-output');
+
+                if (isNaN(fwd) || isNaN(ref) || fwd <= 0 || ref < 0 || ref > fwd) {
+                    outputEl.innerHTML = 'Invalid power inputs values.';
+                    return;
+                }
+
+                if (ref === 0) {
+                    outputEl.innerHTML = 'SWR: 1.00:1<br>Return Loss: Infinity dB<br>Mismatch Loss: 0.00 dB';
+                    return;
+                }
+
+                const reflectionCoefficient = Math.sqrt(ref / fwd);
+                const swr = (1 + reflectionCoefficient) / (1 - reflectionCoefficient);
+                const returnLoss = -20 * Math.log10(reflectionCoefficient);
+                const mismatchLoss = -10 * Math.log10(1 - Math.pow(reflectionCoefficient, 2));
+
+                outputEl.innerHTML = `
+                    SWR: ${swr.toFixed(2)}:1<br>
+                    Return Loss: ${returnLoss.toFixed(2)} dB<br>
+                    Mismatch Loss: ${mismatchLoss.toFixed(2)} dB
+                `;
+            });
+        }
+
+        // --- Sunrise / Sunset Calculator (Approximate Geometric) ---
+        const sunCalcBtn = document.getElementById('sun-calc-btn');
+        if (sunCalcBtn) {
+            sunCalcBtn.addEventListener('click', () => {
+                const lat = parseFloat(document.getElementById('sun-lat').value);
+                const lon = parseFloat(document.getElementById('sun-lon').value);
+                const outputEl = document.getElementById('sun-output');
+
+                if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                    outputEl.innerHTML = 'Invalid coordinates entries.';
+                    return;
+                }
+
+                // Simplified algorithmic fallback estimation for current date context
+                const now = new Date();
+                const start = new Date(now.getFullYear(), 0, 0);
+                const diff = now - start;
+                const oneDay = 1000 * 60 * 60 * 24;
+                const dayOfYear = Math.floor(diff / oneDay);
+
+                // Earth orbital approximation constants
+                const gamma = (2 * Math.PI / 365) * (dayOfYear - 1 + (12 - 12) / 24);
+                const eqtime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
+                const decl = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma) - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma) - 0.002697 * Math.cos(3 * gamma) + 0.00148 * Math.sin(3 * gamma);
+
+                const latRad = lat * Math.PI / 180;
+                const haarg = Math.cos(90.833 * Math.PI / 180) / (Math.cos(latRad) * Math.cos(decl)) - Math.tan(latRad) * Math.tan(decl);
+                
+                if (haarg > 1 || haarg < -1) {
+                    outputEl.innerHTML = 'Polar Day/Night conditions encountered.';
+                    return;
+                }
+
+                const hourAngle = Math.acos(haarg) * 180 / Math.PI;
+                const sunriseUTCMinutes = 720 - 4 * (lon + hourAngle) - eqtime;
+                const sunsetUTCMinutes = 720 - 4 * (lon - hourAngle) - eqtime;
+
+                const parseMinutes = (m) => {
+                    const h = Math.floor((m / 60) % 24);
+                    const mins = Math.floor(m % 60);
+                    return `${h.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+                };
+
+                outputEl.innerHTML = `
+                    Sunrise: ${parseMinutes(sunriseUTCMinutes)} UTC<br>
+                    Sunset: ${parseMinutes(sunsetUTCMinutes)} UTC
+                `;
+            });
+        }
+
+        // =====================================================================
+        // TAB NAVIGATION
+        // =====================================================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                // Leaflet needs a nudge after being hidden/shown to recalc its size
+                if (btn.dataset.tab === 'dashboard') setTimeout(() => map.invalidateSize(), 50);
+            });
+        });
+
+        // =====================================================================
+        // SETTINGS (persisted to localStorage)
+        // =====================================================================
+        const SETTINGS_KEY = 'ahrcSettings';
+        const DEFAULT_SETTINGS = {
+            callsign: '',
+            aprsApiKey: '',
+            autoRefresh: true,
+            vkOnly: true,
+            units: 'both',
+            mapLat: -27.47,
+            mapLon: 153.02,
+            mapZoom: 6
+        };
+
+        function loadSettings() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS };
+            } catch (e) {
+                return { ...DEFAULT_SETTINGS };
+            }
+        }
+        function saveSettingsToStorage(s) {
+            try {
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+            } catch (e) { /* localStorage unavailable — settings just won't persist */ }
+        }
+
+        let appSettings = loadSettings();
+
+        function applySettingsToForm() {
+            document.getElementById('set-callsign').value = appSettings.callsign;
+            document.getElementById('set-aprs-key').value = appSettings.aprsApiKey;
+            document.getElementById('set-units').value = appSettings.units;
+            document.getElementById('set-map-lat').value = appSettings.mapLat;
+            document.getElementById('set-map-lon').value = appSettings.mapLon;
+            document.getElementById('set-map-zoom').value = appSettings.mapZoom;
+            const arToggle = document.getElementById('set-autorefresh');
+            const vkToggle = document.getElementById('set-vkonly');
+            arToggle.classList.toggle('on', appSettings.autoRefresh);
+            arToggle.dataset.on = appSettings.autoRefresh;
+            vkToggle.classList.toggle('on', appSettings.vkOnly);
+            vkToggle.dataset.on = appSettings.vkOnly;
+        }
+        applySettingsToForm();
+
+        // Apply the saved default callsign to the live tracker box
+        if (appSettings.callsign && callsignInput) callsignInput.value = appSettings.callsign;
+
+        // Apply saved default map view
+        map.setView([appSettings.mapLat, appSettings.mapLon], appSettings.mapZoom);
+
+        document.querySelectorAll('.toggle-switch').forEach(t => {
+            t.addEventListener('click', () => {
+                const isOn = t.dataset.on === 'true';
+                t.dataset.on = (!isOn).toString();
+                t.classList.toggle('on', !isOn);
+            });
+        });
+
+        function showSettingsSaved() {
+            const el = document.getElementById('settings-saved-msg');
+            el.style.display = 'inline';
+            setTimeout(() => { el.style.display = 'none'; }, 2000);
+        }
+
+        document.getElementById('settings-save-btn').addEventListener('click', () => {
+            appSettings.callsign = document.getElementById('set-callsign').value.trim().toUpperCase();
+            appSettings.aprsApiKey = document.getElementById('set-aprs-key').value.trim();
+            appSettings.units = document.getElementById('set-units').value;
+            appSettings.autoRefresh = document.getElementById('set-autorefresh').dataset.on === 'true';
+            appSettings.vkOnly = document.getElementById('set-vkonly').dataset.on === 'true';
+            saveSettingsToStorage(appSettings);
+            showSettingsSaved();
+            refreshAllFeeds(); // re-apply VK-only filter immediately
+            manageAutoRefresh();
+        });
+
+        document.getElementById('settings-reset-btn').addEventListener('click', () => {
+            appSettings = { ...DEFAULT_SETTINGS };
+            saveSettingsToStorage(appSettings);
+            applySettingsToForm();
+            showSettingsSaved();
+            refreshAllFeeds();
+            manageAutoRefresh();
+        });
+
+        document.getElementById('set-map-use-current').addEventListener('click', () => {
+            const c = map.getCenter();
+            document.getElementById('set-map-lat').value = c.lat.toFixed(4);
+            document.getElementById('set-map-lon').value = c.lng.toFixed(4);
+            document.getElementById('set-map-zoom').value = map.getZoom();
+        });
+
+        document.getElementById('settings-map-save-btn').addEventListener('click', () => {
+            appSettings.mapLat = parseFloat(document.getElementById('set-map-lat').value) || DEFAULT_SETTINGS.mapLat;
+            appSettings.mapLon = parseFloat(document.getElementById('set-map-lon').value) || DEFAULT_SETTINGS.mapLon;
+            appSettings.mapZoom = parseInt(document.getElementById('set-map-zoom').value) || DEFAULT_SETTINGS.mapZoom;
+            saveSettingsToStorage(appSettings);
+            showSettingsSaved();
+        });
+
+        // =====================================================================
+        // POTA / SOTA LIVE ACTIVATIONS
+        // =====================================================================
+        function timeAgo(dateStr) {
+            const then = new Date(dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z');
+            const mins = Math.round((Date.now() - then.getTime()) / 60000);
+            if (isNaN(mins)) return '';
+            if (mins < 1) return 'just now';
+            if (mins < 60) return `${mins}m ago`;
+            return `${Math.round(mins / 60)}h ago`;
+        }
+
+        function renderLog(elId, entries, emptyMsg) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            if (!entries.length) {
+                el.innerHTML = `<div class="log-entry"><span class="entry-time">[System]</span> ${emptyMsg}</div>`;
+                return;
+            }
+            el.innerHTML = entries.map(e =>
+                `<div class="log-entry"><span class="entry-time">${e.time}</span><span class="entry-call">${e.call}</span> <span class="entry-data">${e.data}</span></div>`
+            ).join('');
+        }
+
+        async function fetchPotaSota() {
+            try {
+                const [potaRes, sotaRes] = await Promise.all([
+                    fetch('https://api.pota.app/spot/activator'),
+                    fetch('https://api2.sota.org.uk/api/spots/40/')
+                ]);
+                let entries = [];
+
+                if (potaRes.ok) {
+                    const potaData = await potaRes.json();
+                    potaData.forEach(s => {
+                        const isVk = (s.activator || '').toUpperCase().startsWith('VK') || (s.locationDesc || '').includes('VK-');
+                        if (appSettings.vkOnly && !isVk) return;
+                        entries.push({
+                            time: timeAgo(s.spotTime),
+                            call: s.activator,
+                            data: `POTA ${s.reference} · ${s.frequency}kHz ${s.mode || ''}`,
+                            ts: new Date(s.spotTime.includes('Z') ? s.spotTime : s.spotTime + 'Z').getTime()
+                        });
+                    });
+                }
+
+                if (sotaRes.ok) {
+                    const sotaData = await sotaRes.json();
+                    sotaData.forEach(s => {
+                        const isVk = (s.associationCode || '').toUpperCase().startsWith('VK') || (s.activatorCallsign || '').toUpperCase().startsWith('VK');
+                        if (appSettings.vkOnly && !isVk) return;
+                        entries.push({
+                            time: timeAgo(s.timeStamp),
+                            call: s.activatorCallsign,
+                            data: `SOTA ${s.summitCode} · ${s.frequency} ${s.mode || ''}`,
+                            ts: new Date(s.timeStamp.includes('Z') ? s.timeStamp : s.timeStamp + 'Z').getTime()
+                        });
+                    });
+                }
+
+                entries.sort((a, b) => b.ts - a.ts);
+                renderLog('pota-log', entries.slice(0, 10), appSettings.vkOnly ? 'No recent VK POTA/SOTA activity found.' : 'No recent activity found.');
+            } catch (err) {
+                renderLog('pota-log', [], 'Feed unavailable right now — POTA/SOTA APIs may be temporarily down or blocked by your network.');
+            }
+        }
+
+        // =====================================================================
+        // LIVE DX CLUSTER (dxsummit.fi)
+        // =====================================================================
+        async function fetchDxCluster() {
+            try {
+                const res = await fetch('https://new.dxsummit.fi/api/v1/spots?content_type=json&limit=60&include=hf');
+                if (!res.ok) throw new Error('bad response');
+                const data = await res.json();
+                const rows = Array.isArray(data) ? data : (data.spots || data.data || []);
+                let entries = rows.map(s => {
+                    const spotter = s.spotter || s[1] || '';
+                    const dx = s.dx_call || s.dxCall || s[2] || '';
+                    const freq = s.freq || s.frequency || s[4] || '';
+                    const time = s.time || s[5] || '';
+                    return { spotter, dx, freq, time };
+                }).filter(s => s.dx);
+
+                if (appSettings.vkOnly) {
+                    entries = entries.filter(s => s.spotter.toUpperCase().startsWith('VK') || s.dx.toUpperCase().startsWith('VK'));
+                }
+
+                const rendered = entries.slice(0, 10).map(s => ({
+                    time: timeAgo(s.time) || '',
+                    call: s.dx,
+                    data: `${s.freq} kHz · spotted by ${s.spotter}`
+                }));
+                renderLog('dx-cluster-log', rendered, appSettings.vkOnly ? 'No recent VK-linked spots found.' : 'No recent spots found.');
+            } catch (err) {
+                renderLog('dx-cluster-log', [], 'DX cluster feed unavailable — dxsummit.fi may be blocking cross-origin requests right now.');
+            }
+        }
+
+        // =====================================================================
+        // WSPR VK SPOTS (wspr.live ClickHouse HTTP interface)
+        // =====================================================================
+        async function fetchWspr() {
+            try {
+                const query = "SELECT time, band, tx_sign, rx_sign, distance, snr FROM wspr.rx WHERE tx_sign LIKE 'VK%' AND time > now() - INTERVAL 3 HOUR ORDER BY time DESC LIMIT 10 FORMAT JSON";
+                const res = await fetch('https://db1.wspr.live/?query=' + encodeURIComponent(query));
+                if (!res.ok) throw new Error('bad response');
+                const json = await res.json();
+                const rows = json.data || [];
+                const entries = rows.map(r => ({
+                    time: timeAgo(r.time.replace(' ', 'T')),
+                    call: r.tx_sign,
+                    data: `band ${r.band} → ${r.rx_sign} · ${r.distance}km · ${r.snr}dB SNR`
+                }));
+                renderLog('wspr-log', entries, 'No VK WSPR spots in the last 3 hours.');
+            } catch (err) {
+                renderLog('wspr-log', [], 'wspr.live query failed — the service may be temporarily unavailable.');
+            }
+        }
+
+        // =====================================================================
+        // ALL-FEEDS REFRESH + AUTO-REFRESH SCHEDULER
+        // =====================================================================
+        let refreshTimer = null;
+        function refreshAllFeeds() {
+            fetchPotaSota();
+            fetchDxCluster();
+            fetchWspr();
+        }
+        function manageAutoRefresh() {
+            if (refreshTimer) clearInterval(refreshTimer);
+            if (appSettings.autoRefresh) {
+                refreshTimer = setInterval(refreshAllFeeds, 60000);
+            }
+        }
+        refreshAllFeeds();
+        manageAutoRefresh();
+
+        // =====================================================================
+        // PI-STAR LOCAL HOTSPOT CHECK
+        // =====================================================================
+        const pistarCheckBtn = document.getElementById('pistar-check-btn');
+        if (pistarCheckBtn) {
+            pistarCheckBtn.addEventListener('click', async () => {
+                const ip = document.getElementById('pistar-ip').value.trim();
+                const statusEl = document.getElementById('pistar-status');
+                if (!ip) {
+                    renderLog('pistar-log', [], 'Enter your Pi-Star hotspot\'s local IP first, e.g. 192.168.1.50.');
+                    return;
+                }
+                statusEl.textContent = 'Checking...';
+                try {
+                    // Pi-Star doesn't expose a CORS-enabled JSON API, and if this page is served
+                    // over https (e.g. GitHub Pages) a plain http:// local IP is blocked as mixed
+                    // content by the browser regardless of network reachability. This is a best-effort
+                    // reachability probe, not a real status parse.
+                    await fetch(`http://${ip}/`, { mode: 'no-cors' });
+                    statusEl.textContent = 'Reachable';
+                    statusEl.style.color = '#a7f3d0';
+                    renderLog('pistar-log', [{ time: '[OK]', call: ip, data: 'responded to a network probe — open it directly for full status.' }], '');
+                } catch (err) {
+                    statusEl.textContent = 'Blocked/Unreachable';
+                    statusEl.style.color = '#eab308';
+                    renderLog('pistar-log', [], `Couldn't reach ${ip} — if this page is loaded over https, browsers block requests to plain-http local addresses (mixed content). Open http://${ip}/ directly in a new tab instead.`);
+                }
+            });
+        }
+
+        // =====================================================================
+        // SATELLITE PASS PREDICTIONS (Celestrak TLE + satellite.js SGP4)
+        // =====================================================================
+        let satObserver = { lat: appSettings.mapLat, lon: appSettings.mapLon };
+        document.getElementById('sat-location-label').textContent = `${satObserver.lat.toFixed(2)}, ${satObserver.lon.toFixed(2)}`;
+
+        const SAT_NAMES = ['ISS (ZARYA)', 'SO-50', 'AO-91', 'AO-92'];
+
+        function parseTleBlock(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+            const sats = {};
+            for (let i = 0; i < lines.length - 2; i += 3) {
+                const name = lines[i];
+                const l1 = lines[i + 1];
+                const l2 = lines[i + 2];
+                if (l1 && l1.startsWith('1 ') && l2 && l2.startsWith('2 ')) {
+                    sats[name.toUpperCase()] = { name, l1, l2 };
+                }
+            }
+            return sats;
+        }
+
+        async function computeSatPasses() {
+            const logEl = document.getElementById('sat-log');
+            if (typeof satellite === 'undefined') {
+                renderLog('sat-log', [], 'Satellite math library failed to load — check your network connection and reload.');
+                return;
+            }
+            logEl.innerHTML = `<div class="log-entry"><span class="entry-time">[System]</span> Fetching TLEs and computing passes...</div>`;
+            try {
+                const [stationsRes, amateurRes] = await Promise.all([
+                    fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle'),
+                    fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle')
+                ]);
+                if (!stationsRes.ok || !amateurRes.ok) throw new Error('TLE fetch failed');
+                const allTle = { ...parseTleBlock(await stationsRes.text()), ...parseTleBlock(await amateurRes.text()) };
+
+                const observerGd = {
+                    latitude: satellite.degreesToRadians(satObserver.lat),
+                    longitude: satellite.degreesToRadians(satObserver.lon),
+                    height: 0.05
+                };
+
+                const results = [];
+                const now = Date.now();
+                for (const name of SAT_NAMES) {
+                    const tle = allTle[name.toUpperCase()];
+                    if (!tle) continue;
+                    const satrec = satellite.twoline2satrec(tle.l1, tle.l2);
+                    let aosTime = null, maxElev = 0, inPass = false, losTime = null;
+                    for (let m = 0; m <= 24 * 60; m += 1) { // step 1 min across next 24h
+                        const t = new Date(now + m * 60000);
+                        const pv = satellite.propagate(satrec, t);
+                        if (!pv.position) continue;
+                        const gmst = satellite.gstime(t);
+                        const ecf = satellite.eciToEcf(pv.position, gmst);
+                        const look = satellite.ecfToLookAngles(observerGd, ecf);
+                        const elevDeg = satellite.radiansToDegrees(look.elevation);
+                        if (elevDeg > 0) {
+                            if (!inPass) { aosTime = t; inPass = true; maxElev = elevDeg; }
+                            else if (elevDeg > maxElev) maxElev = elevDeg;
+                            losTime = t;
+                        } else if (inPass) {
+                            break; // pass ended, that's our next one
+                        }
+                    }
+                    if (aosTime) {
+                        results.push({ name, aosTime, maxElev, losTime });
+                    }
+                }
+                results.sort((a, b) => a.aosTime - b.aosTime);
+                const entries = results.map(r => ({
+                    time: r.aosTime.toISOString().substr(11, 5) + 'Z',
+                    call: r.name,
+                    data: `max ${r.maxElev.toFixed(0)}° · AOS in ${Math.max(0, Math.round((r.aosTime - now) / 60000))}min`
+                }));
+                renderLog('sat-log', entries, 'No passes found for these satellites in the next 24h from this location.');
+            } catch (err) {
+                renderLog('sat-log', [], 'Could not load TLE data — Celestrak may be temporarily unreachable.');
+            }
+        }
+        computeSatPasses();
+
+        document.getElementById('sat-recalc-btn').addEventListener('click', computeSatPasses);
+        document.getElementById('sat-geo-btn').addEventListener('click', () => {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition((pos) => {
+                satObserver = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                document.getElementById('sat-location-label').textContent = `${satObserver.lat.toFixed(2)}, ${satObserver.lon.toFixed(2)}`;
+                computeSatPasses();
+            });
+        });
+    </script>
 </body>
 </html>
