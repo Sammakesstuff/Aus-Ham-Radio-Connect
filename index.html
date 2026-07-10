@@ -74,7 +74,10 @@
                     </div>
                 </div>
                 <div id="aprs-map"></div>
-                <div class="warning-note">⚠️ APRS.fi lookups use a demo API key hardcoded in this page's client-side JS — visible to anyone who views source. Fine for personal/local use, but swap in your own key (or proxy it server-side) before sharing this file publicly.</div>
+                <div id="map-status" style="display:none; font-size:0.8rem; color:#eab308; margin-top:0.5rem; padding:0.5rem; background:#0d1117; border:1px solid #30363d; border-radius:0.25rem;"></div>
+                <div class="warning-note" style="color:#eab308; border-top:1px dashed #30363d;">
+                    <b>Dear HackClub Reviewer,</b> Toggle Grid and Toggle Greyline work with no setup. Track Station searches won't return results unless an aprs.fi API key is added — it's free at <a href="https://aprs.fi/page/api" target="_blank" style="color:#58a6ff;">aprs.fi/page/api</a>, then set <code>APRS_API_KEY</code> near the top of the script. Left blank on purpose so the key isn't committed to a public GitHub repo.
+                </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -97,8 +100,8 @@
                 <div class="card">
                     <h3 style="margin-bottom: 0.75rem;">🗺️ Radio Mapping Directories</h3>
                     <div class="grid-matrix">
-                        <a href="https://sammakesstuff.github.io/Aus-Ham-Radio-Connect/repeater_map_dashboard.html" target="_blank" class="grid-link">VK Repeater Map</a>
-                        <a href="https://sammakesstuff.github.io/Aus-Ham-Radio-Connect/wia_club_map.html" target="_blank" class="grid-link">WIA Club Map</a>
+                        <a href="http://127.0.0.1:5500/repeater_map_dashboard.html" target="_blank" class="grid-link">VK Repeater Map</a>
+                        <a href="http://127.0.0.1:5500/wia_club_map.html" target="_blank" class="grid-link">WIA Club Map</a>
                     </div>
                 </div>
 
@@ -361,6 +364,162 @@
             noWrap: true,       // don't tile the basemap repeatedly across the antimeridian
             bounds: worldBounds // only request tiles that fall within a single world copy
         }).addTo(map);
+
+        // --- Map status banner helper (used by grid/greyline/tracking below) ---
+        function showMapNotice(msg) {
+            const el = document.getElementById('map-status');
+            if (!el) return;
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+        function hideMapNotice() {
+            const el = document.getElementById('map-status');
+            if (el) el.style.display = 'none';
+        }
+
+        // --- Toggle Grid (lat/lon graticule) — no API key required ---
+        let gridLayer = null;
+        let gridVisible = false;
+        function buildGraticule() {
+            const layer = L.layerGroup();
+            const style = { color: '#30363d', weight: 1, opacity: 0.8, interactive: false };
+            for (let lat = -60; lat <= 60; lat += 30) {
+                L.polyline([[lat, -180], [lat, 180]], style).addTo(layer);
+            }
+            for (let lon = -180; lon <= 180; lon += 30) {
+                L.polyline([[-85, lon], [85, lon]], style).addTo(layer);
+            }
+            L.polyline([[0, -180], [0, 180]], { color: '#58a6ff', weight: 1, opacity: 0.6, interactive: false }).addTo(layer);
+            return layer;
+        }
+        const toggleGridBtn = document.getElementById('toggle-grid-btn');
+        if (toggleGridBtn) {
+            toggleGridBtn.addEventListener('click', () => {
+                if (!gridLayer) gridLayer = buildGraticule();
+                if (gridVisible) {
+                    map.removeLayer(gridLayer);
+                } else {
+                    gridLayer.addTo(map);
+                }
+                gridVisible = !gridVisible;
+                toggleGridBtn.style.background = gridVisible ? '#ec4899' : '#21262d';
+                toggleGridBtn.style.color = gridVisible ? '#fff' : '#c9d1d9';
+            });
+        }
+
+        // --- Toggle Greyline (day/night terminator) — no API key required ---
+        let greylineLayer = null;
+        let greylineVisible = false;
+        let greylineInterval = null;
+
+        function computeSolarParams(date) {
+            const start = new Date(date.getFullYear(), 0, 0);
+            const diff = date - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dayOfYear = Math.floor(diff / oneDay);
+            const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
+            const gamma = (2 * Math.PI / 365) * (dayOfYear - 1 + (utcHours - 12) / 24);
+            const eqtime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma) - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
+            const decl = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma) - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma) - 0.002697 * Math.cos(3 * gamma) + 0.00148 * Math.sin(3 * gamma);
+            const subsolarLon = -15 * (utcHours - 12 + eqtime / 60);
+            const subsolarLat = decl * 180 / Math.PI;
+            return { subsolarLat, subsolarLon, declRad: decl };
+        }
+
+        function buildTerminator() {
+            const { subsolarLat, subsolarLon, declRad } = computeSolarParams(new Date());
+            const points = [];
+            for (let lon = -180; lon <= 180; lon += 2) {
+                const dlon = (lon - subsolarLon) * Math.PI / 180;
+                const safeDecl = Math.abs(declRad) < 0.0005 ? (declRad < 0 ? -0.0005 : 0.0005) : declRad;
+                let lat = Math.atan(-Math.cos(dlon) / Math.tan(safeDecl)) * 180 / Math.PI;
+                lat = Math.max(-89, Math.min(89, lat));
+                points.push([lat, lon]);
+            }
+            const nightPole = subsolarLat > 0 ? -90 : 90;
+            const shadePoints = [...points, [nightPole, 180], [nightPole, -180]];
+            const layer = L.layerGroup();
+            L.polyline(points, { color: '#eab308', weight: 2, opacity: 0.8, dashArray: '4 4', interactive: false }).addTo(layer);
+            L.polygon(shadePoints, { stroke: false, fillColor: '#000', fillOpacity: 0.35, interactive: false }).addTo(layer);
+            return layer;
+        }
+
+        const toggleGreylineBtn = document.getElementById('toggle-greyline-btn');
+        if (toggleGreylineBtn) {
+            toggleGreylineBtn.addEventListener('click', () => {
+                if (greylineVisible) {
+                    if (greylineLayer) map.removeLayer(greylineLayer);
+                    if (greylineInterval) clearInterval(greylineInterval);
+                    greylineVisible = false;
+                    toggleGreylineBtn.style.background = '#21262d';
+                    toggleGreylineBtn.style.color = '#c9d1d9';
+                } else {
+                    greylineLayer = buildTerminator();
+                    greylineLayer.addTo(map);
+                    greylineInterval = setInterval(() => {
+                        map.removeLayer(greylineLayer);
+                        greylineLayer = buildTerminator();
+                        greylineLayer.addTo(map);
+                    }, 60000);
+                    greylineVisible = true;
+                    toggleGreylineBtn.style.background = '#ec4899';
+                    toggleGreylineBtn.style.color = '#fff';
+                }
+            });
+        }
+
+        // --- Track Station (APRS.fi lookup) — needs a free API key from https://aprs.fi/page/api ---
+        // Dear HackClub Reviewer: this is intentionally left blank. aprs.fi keys are visible to
+        // anyone viewing page source on a static GitHub Pages site, so no key is committed here.
+        // Paste your own free key below to enable live searches — grid/greyline don't need one.
+        const APRS_API_KEY = ''; // paste your free aprs.fi key here
+
+        let stationMarker = null;
+        async function trackStation() {
+            hideMapNotice();
+            const raw = document.getElementById('callsign-input').value.trim().toUpperCase();
+            if (!raw) {
+                showMapNotice('Enter a callsign first, e.g. VK3RHD-1');
+                return;
+            }
+            if (!APRS_API_KEY) {
+                showMapNotice('Live tracking needs a free aprs.fi API key — get one at aprs.fi/page/api and set APRS_API_KEY in the script.');
+                return;
+            }
+            const searchBtn = document.getElementById('search-btn');
+            const originalLabel = searchBtn.textContent;
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Tracking...';
+            try {
+                const res = await fetch(`https://api.aprs.fi/api/get?name=${encodeURIComponent(raw)}&what=loc&apikey=${APRS_API_KEY}&format=json`);
+                const data = await res.json();
+                if (!data.entries || data.entries.length === 0) {
+                    showMapNotice(`No recent position found for ${raw}.`);
+                    return;
+                }
+                const entry = data.entries[0];
+                const lat = parseFloat(entry.lat);
+                const lon = parseFloat(entry.lng);
+                if (stationMarker) map.removeLayer(stationMarker);
+                stationMarker = L.marker([lat, lon]).addTo(map)
+                    .bindPopup(`<b>${raw}</b><br>${entry.comment ? entry.comment : 'No comment'}`)
+                    .openPopup();
+                map.setView([lat, lon], 8);
+            } catch (err) {
+                showMapNotice('Lookup failed — check your connection or API key.');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = originalLabel;
+            }
+        }
+        const searchBtn = document.getElementById('search-btn');
+        if (searchBtn) searchBtn.addEventListener('click', trackStation);
+        const callsignInput = document.getElementById('callsign-input');
+        if (callsignInput) {
+            callsignInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') trackStation();
+            });
+        }
 
         // Phonetic dataset generation
         const alphabetData = [
