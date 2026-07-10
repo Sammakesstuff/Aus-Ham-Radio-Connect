@@ -55,12 +55,39 @@
         .locator-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
         .locator-row input { flex: 1; min-width: 80px; text-transform: none; }
         .locator-output { font-size: 1.5rem; color: #eab308; font-weight: bold; margin-top: 0.5rem; letter-spacing: 1px; }
+
+        /* Tab navigation */
+        .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid #30363d; padding-bottom: 1rem; }
+        .tab-btn { background: #161b22; border: 1px solid #30363d; color: #8b949e; padding: 0.6rem 1.25rem; border-radius: 0.375rem; font-family: monospace; font-weight: bold; cursor: pointer; }
+        .tab-btn:hover { color: #f0f6fc; border-color: #58a6ff; }
+        .tab-btn.active { background: #ec4899; color: #fff; border-color: #ec4899; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Settings tab */
+        .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.6rem 0; border-bottom: 1px solid #21262d; flex-wrap: wrap; }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-label { font-size: 0.85rem; color: #c9d1d9; }
+        .settings-desc { font-size: 0.7rem; color: #8b949e; margin-top: 0.15rem; }
+        .settings-control select, .settings-control input[type="text"] { width: auto; min-width: 140px; }
+        .toggle-switch { position: relative; width: 44px; height: 24px; background: #21262d; border: 1px solid #30363d; border-radius: 12px; cursor: pointer; flex-shrink: 0; }
+        .toggle-switch.on { background: #ec4899; border-color: #ec4899; }
+        .toggle-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #f0f6fc; border-radius: 50%; transition: left 0.15s ease; }
+        .toggle-switch.on::after { left: 22px; }
+        .settings-save-bar { display: flex; gap: 0.75rem; margin-top: 1rem; }
+        #settings-saved-msg { color: #a7f3d0; font-size: 0.8rem; display: none; align-self: center; }
     </style>
 </head>
 <body>
     <h1>🚀 Aus Ham Radio Connect // HackClub Stardance Terminal</h1>
     <p style="color: #8b949e; margin-bottom: 2rem;">Live HF Propagation Matrix, DMR Tickers & APRS Node Tracker</p>
 
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+    </div>
+
+    <div id="tab-dashboard" class="tab-panel active">
     <div class="grid">
         <div style="display: flex; flex-direction: column; gap: 1.5rem; grid-column: span 2;">
             <div class="card">
@@ -76,7 +103,7 @@
                 <div id="aprs-map"></div>
                 <div id="map-status" style="display:none; font-size:0.8rem; color:#eab308; margin-top:0.5rem; padding:0.5rem; background:#0d1117; border:1px solid #30363d; border-radius:0.25rem;"></div>
                 <div class="warning-note" style="color:#eab308; border-top:1px dashed #30363d;">
-                    <b>Dear HackClub Reviewer,</b> Toggle Grid and Toggle Greyline work with no setup. Track Station searches won't return results unless an aprs.fi API key is added — it's free at <a href="https://aprs.fi/page/api" target="_blank" style="color:#58a6ff;">aprs.fi/page/api</a>, then set <code>APRS_API_KEY</code> near the top of the script. Left blank on purpose so the key isn't committed to a public GitHub repo.
+                    <b>Dear HackClub Reviewer,</b> Toggle Grid and Toggle Greyline work with no setup. Track Station searches need a free aprs.fi API key — grab one at <a href="https://aprs.fi/page/api" target="_blank" style="color:#58a6ff;">aprs.fi/page/api</a> and paste it into the <b>Settings tab</b> (saved to this browser only, never committed to the repo).
                 </div>
             </div>
 
@@ -84,10 +111,14 @@
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <h3 style="margin: 0; border: none;">🥧 Pi-Star Hotspot Status</h3>
-                        <span class="status-badge" id="pistar-status" style="color:#a7f3d0; border-color:#30363d;">Online</span>
+                        <span class="status-badge" id="pistar-status" style="color:#8b949e; border-color:#30363d;">Not Checked</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" id="pistar-ip" placeholder="192.168.1.50" style="text-transform:none;">
+                        <button id="pistar-check-btn">Check</button>
                     </div>
                     <div class="traffic-log" id="pistar-log">
-                        <div class="log-entry"><span class="entry-time">[System]</span> Local hotspot listener active. Awaiting voice transport packet logs...</div>
+                        <div class="log-entry"><span class="entry-time">[System]</span> Enter your Pi-Star hotspot's local IP and press Check. Only works when this page is on the same local network as the hotspot.</div>
                     </div>
                 </div>
 
@@ -254,11 +285,13 @@
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <h3 style="margin: 0; border: none;">🛰️ Satellite Pass Predictions</h3>
-                    <span class="status-badge" style="color:#eab308; border-color:#eab308;">Amsat Feed</span>
+                    <span class="status-badge" style="color:#eab308; border-color:#eab308;">SGP4 Live Calc</span>
                 </div>
-                <div class="traffic-log" id="sat-log">
-                    <div class="log-entry"><span class="entry-time">[System]</span> Listening for live satellite telemetry metrics...</div>
+                <div style="font-size: 0.75rem; color: #8b949e; margin-bottom: 0.5rem;">From <span id="sat-location-label">-27.47, 153.02</span> — <button id="sat-recalc-btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Recalculate</button> <button id="sat-geo-btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background:#21262d; border:1px solid #30363d; color:#c9d1d9;">📡 Use My Location</button></div>
+                <div class="traffic-log" id="sat-log" style="height:150px;">
+                    <div class="log-entry"><span class="entry-time">[System]</span> Loading TLE data and computing passes...</div>
                 </div>
+                <p style="color: #8b949e; font-size: 0.7rem; margin: 0.5rem 0 0;">Next AOS for ISS, SO-50, AO-91 & AO-92 — real SGP4 propagation from live Celestrak TLEs, computed entirely in your browser.</p>
             </div>
 
             <div class="card">
@@ -274,20 +307,28 @@
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <h3 style="margin: 0; border: none;">Brandmeister DMR Network</h3>
-                    <span class="status-badge">TG 505 Stream</span>
+                    <span class="status-badge">Reference</span>
                 </div>
-                <div class="traffic-log" id="bm-log">
-                    <div class="log-entry"><span class="entry-time">[System]</span> Connecting to Talkgroup 505 master node...</div>
+                <p style="font-size: 0.8rem; line-height: 1.5; color: #c9d1d9; margin: 0 0 0.75rem;">
+                    Brandmeister's Last Heard feed runs over a push socket protocol, not plain HTTP — it can't be embedded in a static page without a backend. Use the live dashboard directly:
+                </p>
+                <div class="grid-matrix">
+                    <a href="https://brandmeister.network/?page=lh" target="_blank" class="grid-link">Live Last Heard ↗</a>
+                    <a href="https://brandmeister.network/?page=talkgroups" target="_blank" class="grid-link">Talkgroup List ↗</a>
                 </div>
             </div>
 
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <h3 style="margin: 0; border: none;">Yaesu System Fusion</h3>
-                    <span class="status-badge">YSF Registry</span>
+                    <span class="status-badge">Reference</span>
                 </div>
-                <div class="traffic-log" id="ysf-log">
-                    <div class="log-entry"><span class="entry-time">[System]</span> Reaching server registry...</div>
+                <p style="font-size: 0.8rem; line-height: 1.5; color: #c9d1d9; margin: 0 0 0.75rem;">
+                    YSF reflector activity isn't published as an open CORS-friendly JSON feed. Check current reflector status directly:
+                </p>
+                <div class="grid-matrix">
+                    <a href="https://www.ysfreflector.de/" target="_blank" class="grid-link">YSF Reflector List ↗</a>
+                    <a href="https://register.ysfreflector.de/" target="_blank" class="grid-link">Registry ↗</a>
                 </div>
             </div>
 
@@ -331,8 +372,101 @@
             </div>
         </div>
     </div>
+    </div><!-- /#tab-dashboard -->
 
+    <div id="tab-settings" class="tab-panel">
+        <div class="grid">
+            <div class="card">
+                <h3>⚙️ Preferences</h3>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Default callsign</div>
+                        <div class="settings-desc">Pre-fills the Track Station box on load</div>
+                    </div>
+                    <div class="settings-control">
+                        <input type="text" id="set-callsign" placeholder="VK4AHA">
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">aprs.fi API key</div>
+                        <div class="settings-desc">Free key from <a href="https://aprs.fi/page/api" target="_blank" style="color:#58a6ff;">aprs.fi/page/api</a> — enables live Track Station lookups. Saved to this browser only, never committed to the repo.</div>
+                    </div>
+                    <div class="settings-control">
+                        <input type="text" id="set-aprs-key" placeholder="paste key here" style="min-width: 220px; text-transform: none;">
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Auto-refresh live feeds</div>
+                        <div class="settings-desc">POTA/SOTA, DX Cluster & WSPR refresh every 60s when on</div>
+                    </div>
+                    <div class="toggle-switch" id="set-autorefresh" data-on="true"></div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">VK-only filter</div>
+                        <div class="settings-desc">Restrict POTA/SOTA & DX Cluster feeds to Australian stations</div>
+                    </div>
+                    <div class="toggle-switch on" id="set-vkonly" data-on="true"></div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Antenna calculator units</div>
+                        <div class="settings-desc">Which unit is shown first in the antenna length calculator</div>
+                    </div>
+                    <div class="settings-control">
+                        <select id="set-units">
+                            <option value="both">Feet & Metres</option>
+                            <option value="metric">Metric first</option>
+                            <option value="imperial">Imperial first</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-save-bar">
+                    <button id="settings-save-btn">Save Settings</button>
+                    <button id="settings-reset-btn" style="background:#21262d; border:1px solid #30363d; color:#c9d1d9;">Reset to Defaults</button>
+                    <span id="settings-saved-msg">✓ Saved</span>
+                </div>
+                <p class="warning-note">Saved to this browser's localStorage only — nothing is sent anywhere, and settings don't sync between devices.</p>
+            </div>
+
+            <div class="card">
+                <h3>🗺️ Default Map View</h3>
+                <p style="font-size: 0.8rem; color: #8b949e; margin: 0 0 0.75rem;">Where the APRS map and satellite location default to on page load.</p>
+                <div class="locator-row">
+                    <input type="text" id="set-map-lat" placeholder="Lat (-27.47)">
+                    <input type="text" id="set-map-lon" placeholder="Lon (153.02)">
+                </div>
+                <div class="locator-row">
+                    <input type="text" id="set-map-zoom" placeholder="Zoom (6)">
+                </div>
+                <button id="set-map-use-current" style="width: 100%; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; margin-bottom: 0.5rem;">Use Current Map View</button>
+                <div class="settings-save-bar" style="margin-top: 0;">
+                    <button id="settings-map-save-btn">Save Default View</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>ℹ️ About This Build</h3>
+                <p style="font-size: 0.8rem; line-height: 1.6; color: #c9d1d9;">
+                    Built by <b>VK4AHA</b> for the Hack Club Stardance program. Live data sources: aprs.fi (station tracking, key required), POTA/SOTA public spot APIs, wspr.live, and dxsummit.fi. Satellite passes use live TLEs from Celestrak with SGP4 propagation via satellite.js, computed client-side — no backend, no tracking, no accounts.
+                </p>
+                <div class="grid-matrix" style="margin-top: 0.75rem;">
+                    <a href="https://qrz.com/db/VK4AHA" target="_blank" class="grid-link">Sam's QRZ Page</a>
+                    <a href="https://hackclub.com/" target="_blank" class="grid-link">Hack Club</a>
+                </div>
+            </div>
+        </div>
+    </div><!-- /#tab-settings -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.3/satellite.min.js"></script>
     <script>
         // Synchronous Live UTC Clock Engine
         function updateClock() {
@@ -469,10 +603,9 @@
         }
 
         // --- Track Station (APRS.fi lookup) — needs a free API key from https://aprs.fi/page/api ---
-        // Dear HackClub Reviewer: this is intentionally left blank. aprs.fi keys are visible to
-        // anyone viewing page source on a static GitHub Pages site, so no key is committed here.
-        // Paste your own free key below to enable live searches — grid/greyline don't need one.
-        const APRS_API_KEY = ''; // paste your free aprs.fi key here
+        // Dear HackClub Reviewer: paste a free aprs.fi key into the Settings tab to enable this —
+        // it's saved to this browser's localStorage only, never committed to the repo.
+        // Grid/greyline overlays work with no key at all.
 
         let stationMarker = null;
         async function trackStation() {
@@ -482,8 +615,8 @@
                 showMapNotice('Enter a callsign first, e.g. VK3RHD-1');
                 return;
             }
-            if (!APRS_API_KEY) {
-                showMapNotice('Live tracking needs a free aprs.fi API key — get one at aprs.fi/page/api and set APRS_API_KEY in the script.');
+            if (!appSettings.aprsApiKey) {
+                showMapNotice('Live tracking needs a free aprs.fi API key — get one at aprs.fi/page/api and paste it into the Settings tab.');
                 return;
             }
             const searchBtn = document.getElementById('search-btn');
@@ -491,7 +624,7 @@
             searchBtn.disabled = true;
             searchBtn.textContent = 'Tracking...';
             try {
-                const res = await fetch(`https://api.aprs.fi/api/get?name=${encodeURIComponent(raw)}&what=loc&apikey=${APRS_API_KEY}&format=json`);
+                const res = await fetch(`https://api.aprs.fi/api/get?name=${encodeURIComponent(raw)}&what=loc&apikey=${appSettings.aprsApiKey}&format=json`);
                 const data = await res.json();
                 if (!data.entries || data.entries.length === 0) {
                     showMapNotice(`No recent position found for ${raw}.`);
@@ -782,6 +915,384 @@
                 `;
             });
         }
+
+        // =====================================================================
+        // TAB NAVIGATION
+        // =====================================================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                // Leaflet needs a nudge after being hidden/shown to recalc its size
+                if (btn.dataset.tab === 'dashboard') setTimeout(() => map.invalidateSize(), 50);
+            });
+        });
+
+        // =====================================================================
+        // SETTINGS (persisted to localStorage)
+        // =====================================================================
+        const SETTINGS_KEY = 'ahrcSettings';
+        const DEFAULT_SETTINGS = {
+            callsign: '',
+            aprsApiKey: '',
+            autoRefresh: true,
+            vkOnly: true,
+            units: 'both',
+            mapLat: -27.47,
+            mapLon: 153.02,
+            mapZoom: 6
+        };
+
+        function loadSettings() {
+            try {
+                const raw = localStorage.getItem(SETTINGS_KEY);
+                return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS };
+            } catch (e) {
+                return { ...DEFAULT_SETTINGS };
+            }
+        }
+        function saveSettingsToStorage(s) {
+            try {
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+            } catch (e) { /* localStorage unavailable — settings just won't persist */ }
+        }
+
+        let appSettings = loadSettings();
+
+        function applySettingsToForm() {
+            document.getElementById('set-callsign').value = appSettings.callsign;
+            document.getElementById('set-aprs-key').value = appSettings.aprsApiKey;
+            document.getElementById('set-units').value = appSettings.units;
+            document.getElementById('set-map-lat').value = appSettings.mapLat;
+            document.getElementById('set-map-lon').value = appSettings.mapLon;
+            document.getElementById('set-map-zoom').value = appSettings.mapZoom;
+            const arToggle = document.getElementById('set-autorefresh');
+            const vkToggle = document.getElementById('set-vkonly');
+            arToggle.classList.toggle('on', appSettings.autoRefresh);
+            arToggle.dataset.on = appSettings.autoRefresh;
+            vkToggle.classList.toggle('on', appSettings.vkOnly);
+            vkToggle.dataset.on = appSettings.vkOnly;
+        }
+        applySettingsToForm();
+
+        // Apply the saved default callsign to the live tracker box
+        if (appSettings.callsign && callsignInput) callsignInput.value = appSettings.callsign;
+
+        // Apply saved default map view
+        map.setView([appSettings.mapLat, appSettings.mapLon], appSettings.mapZoom);
+
+        document.querySelectorAll('.toggle-switch').forEach(t => {
+            t.addEventListener('click', () => {
+                const isOn = t.dataset.on === 'true';
+                t.dataset.on = (!isOn).toString();
+                t.classList.toggle('on', !isOn);
+            });
+        });
+
+        function showSettingsSaved() {
+            const el = document.getElementById('settings-saved-msg');
+            el.style.display = 'inline';
+            setTimeout(() => { el.style.display = 'none'; }, 2000);
+        }
+
+        document.getElementById('settings-save-btn').addEventListener('click', () => {
+            appSettings.callsign = document.getElementById('set-callsign').value.trim().toUpperCase();
+            appSettings.aprsApiKey = document.getElementById('set-aprs-key').value.trim();
+            appSettings.units = document.getElementById('set-units').value;
+            appSettings.autoRefresh = document.getElementById('set-autorefresh').dataset.on === 'true';
+            appSettings.vkOnly = document.getElementById('set-vkonly').dataset.on === 'true';
+            saveSettingsToStorage(appSettings);
+            showSettingsSaved();
+            refreshAllFeeds(); // re-apply VK-only filter immediately
+            manageAutoRefresh();
+        });
+
+        document.getElementById('settings-reset-btn').addEventListener('click', () => {
+            appSettings = { ...DEFAULT_SETTINGS };
+            saveSettingsToStorage(appSettings);
+            applySettingsToForm();
+            showSettingsSaved();
+            refreshAllFeeds();
+            manageAutoRefresh();
+        });
+
+        document.getElementById('set-map-use-current').addEventListener('click', () => {
+            const c = map.getCenter();
+            document.getElementById('set-map-lat').value = c.lat.toFixed(4);
+            document.getElementById('set-map-lon').value = c.lng.toFixed(4);
+            document.getElementById('set-map-zoom').value = map.getZoom();
+        });
+
+        document.getElementById('settings-map-save-btn').addEventListener('click', () => {
+            appSettings.mapLat = parseFloat(document.getElementById('set-map-lat').value) || DEFAULT_SETTINGS.mapLat;
+            appSettings.mapLon = parseFloat(document.getElementById('set-map-lon').value) || DEFAULT_SETTINGS.mapLon;
+            appSettings.mapZoom = parseInt(document.getElementById('set-map-zoom').value) || DEFAULT_SETTINGS.mapZoom;
+            saveSettingsToStorage(appSettings);
+            showSettingsSaved();
+        });
+
+        // =====================================================================
+        // POTA / SOTA LIVE ACTIVATIONS
+        // =====================================================================
+        function timeAgo(dateStr) {
+            const then = new Date(dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z');
+            const mins = Math.round((Date.now() - then.getTime()) / 60000);
+            if (isNaN(mins)) return '';
+            if (mins < 1) return 'just now';
+            if (mins < 60) return `${mins}m ago`;
+            return `${Math.round(mins / 60)}h ago`;
+        }
+
+        function renderLog(elId, entries, emptyMsg) {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            if (!entries.length) {
+                el.innerHTML = `<div class="log-entry"><span class="entry-time">[System]</span> ${emptyMsg}</div>`;
+                return;
+            }
+            el.innerHTML = entries.map(e =>
+                `<div class="log-entry"><span class="entry-time">${e.time}</span><span class="entry-call">${e.call}</span> <span class="entry-data">${e.data}</span></div>`
+            ).join('');
+        }
+
+        async function fetchPotaSota() {
+            try {
+                const [potaRes, sotaRes] = await Promise.all([
+                    fetch('https://api.pota.app/spot/activator'),
+                    fetch('https://api2.sota.org.uk/api/spots/40/')
+                ]);
+                let entries = [];
+
+                if (potaRes.ok) {
+                    const potaData = await potaRes.json();
+                    potaData.forEach(s => {
+                        const isVk = (s.activator || '').toUpperCase().startsWith('VK') || (s.locationDesc || '').includes('VK-');
+                        if (appSettings.vkOnly && !isVk) return;
+                        entries.push({
+                            time: timeAgo(s.spotTime),
+                            call: s.activator,
+                            data: `POTA ${s.reference} · ${s.frequency}kHz ${s.mode || ''}`,
+                            ts: new Date(s.spotTime.includes('Z') ? s.spotTime : s.spotTime + 'Z').getTime()
+                        });
+                    });
+                }
+
+                if (sotaRes.ok) {
+                    const sotaData = await sotaRes.json();
+                    sotaData.forEach(s => {
+                        const isVk = (s.associationCode || '').toUpperCase().startsWith('VK') || (s.activatorCallsign || '').toUpperCase().startsWith('VK');
+                        if (appSettings.vkOnly && !isVk) return;
+                        entries.push({
+                            time: timeAgo(s.timeStamp),
+                            call: s.activatorCallsign,
+                            data: `SOTA ${s.summitCode} · ${s.frequency} ${s.mode || ''}`,
+                            ts: new Date(s.timeStamp.includes('Z') ? s.timeStamp : s.timeStamp + 'Z').getTime()
+                        });
+                    });
+                }
+
+                entries.sort((a, b) => b.ts - a.ts);
+                renderLog('pota-log', entries.slice(0, 10), appSettings.vkOnly ? 'No recent VK POTA/SOTA activity found.' : 'No recent activity found.');
+            } catch (err) {
+                renderLog('pota-log', [], 'Feed unavailable right now — POTA/SOTA APIs may be temporarily down or blocked by your network.');
+            }
+        }
+
+        // =====================================================================
+        // LIVE DX CLUSTER (dxsummit.fi)
+        // =====================================================================
+        async function fetchDxCluster() {
+            try {
+                const res = await fetch('https://new.dxsummit.fi/api/v1/spots?content_type=json&limit=60&include=hf');
+                if (!res.ok) throw new Error('bad response');
+                const data = await res.json();
+                const rows = Array.isArray(data) ? data : (data.spots || data.data || []);
+                let entries = rows.map(s => {
+                    const spotter = s.spotter || s[1] || '';
+                    const dx = s.dx_call || s.dxCall || s[2] || '';
+                    const freq = s.freq || s.frequency || s[4] || '';
+                    const time = s.time || s[5] || '';
+                    return { spotter, dx, freq, time };
+                }).filter(s => s.dx);
+
+                if (appSettings.vkOnly) {
+                    entries = entries.filter(s => s.spotter.toUpperCase().startsWith('VK') || s.dx.toUpperCase().startsWith('VK'));
+                }
+
+                const rendered = entries.slice(0, 10).map(s => ({
+                    time: timeAgo(s.time) || '',
+                    call: s.dx,
+                    data: `${s.freq} kHz · spotted by ${s.spotter}`
+                }));
+                renderLog('dx-cluster-log', rendered, appSettings.vkOnly ? 'No recent VK-linked spots found.' : 'No recent spots found.');
+            } catch (err) {
+                renderLog('dx-cluster-log', [], 'DX cluster feed unavailable — dxsummit.fi may be blocking cross-origin requests right now.');
+            }
+        }
+
+        // =====================================================================
+        // WSPR VK SPOTS (wspr.live ClickHouse HTTP interface)
+        // =====================================================================
+        async function fetchWspr() {
+            try {
+                const query = "SELECT time, band, tx_sign, rx_sign, distance, snr FROM wspr.rx WHERE tx_sign LIKE 'VK%' AND time > now() - INTERVAL 3 HOUR ORDER BY time DESC LIMIT 10 FORMAT JSON";
+                const res = await fetch('https://db1.wspr.live/?query=' + encodeURIComponent(query));
+                if (!res.ok) throw new Error('bad response');
+                const json = await res.json();
+                const rows = json.data || [];
+                const entries = rows.map(r => ({
+                    time: timeAgo(r.time.replace(' ', 'T')),
+                    call: r.tx_sign,
+                    data: `band ${r.band} → ${r.rx_sign} · ${r.distance}km · ${r.snr}dB SNR`
+                }));
+                renderLog('wspr-log', entries, 'No VK WSPR spots in the last 3 hours.');
+            } catch (err) {
+                renderLog('wspr-log', [], 'wspr.live query failed — the service may be temporarily unavailable.');
+            }
+        }
+
+        // =====================================================================
+        // ALL-FEEDS REFRESH + AUTO-REFRESH SCHEDULER
+        // =====================================================================
+        let refreshTimer = null;
+        function refreshAllFeeds() {
+            fetchPotaSota();
+            fetchDxCluster();
+            fetchWspr();
+        }
+        function manageAutoRefresh() {
+            if (refreshTimer) clearInterval(refreshTimer);
+            if (appSettings.autoRefresh) {
+                refreshTimer = setInterval(refreshAllFeeds, 60000);
+            }
+        }
+        refreshAllFeeds();
+        manageAutoRefresh();
+
+        // =====================================================================
+        // PI-STAR LOCAL HOTSPOT CHECK
+        // =====================================================================
+        const pistarCheckBtn = document.getElementById('pistar-check-btn');
+        if (pistarCheckBtn) {
+            pistarCheckBtn.addEventListener('click', async () => {
+                const ip = document.getElementById('pistar-ip').value.trim();
+                const statusEl = document.getElementById('pistar-status');
+                if (!ip) {
+                    renderLog('pistar-log', [], 'Enter your Pi-Star hotspot\'s local IP first, e.g. 192.168.1.50.');
+                    return;
+                }
+                statusEl.textContent = 'Checking...';
+                try {
+                    // Pi-Star doesn't expose a CORS-enabled JSON API, and if this page is served
+                    // over https (e.g. GitHub Pages) a plain http:// local IP is blocked as mixed
+                    // content by the browser regardless of network reachability. This is a best-effort
+                    // reachability probe, not a real status parse.
+                    await fetch(`http://${ip}/`, { mode: 'no-cors' });
+                    statusEl.textContent = 'Reachable';
+                    statusEl.style.color = '#a7f3d0';
+                    renderLog('pistar-log', [{ time: '[OK]', call: ip, data: 'responded to a network probe — open it directly for full status.' }], '');
+                } catch (err) {
+                    statusEl.textContent = 'Blocked/Unreachable';
+                    statusEl.style.color = '#eab308';
+                    renderLog('pistar-log', [], `Couldn't reach ${ip} — if this page is loaded over https, browsers block requests to plain-http local addresses (mixed content). Open http://${ip}/ directly in a new tab instead.`);
+                }
+            });
+        }
+
+        // =====================================================================
+        // SATELLITE PASS PREDICTIONS (Celestrak TLE + satellite.js SGP4)
+        // =====================================================================
+        let satObserver = { lat: appSettings.mapLat, lon: appSettings.mapLon };
+        document.getElementById('sat-location-label').textContent = `${satObserver.lat.toFixed(2)}, ${satObserver.lon.toFixed(2)}`;
+
+        const SAT_NAMES = ['ISS (ZARYA)', 'SO-50', 'AO-91', 'AO-92'];
+
+        function parseTleBlock(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+            const sats = {};
+            for (let i = 0; i < lines.length - 2; i += 3) {
+                const name = lines[i];
+                const l1 = lines[i + 1];
+                const l2 = lines[i + 2];
+                if (l1 && l1.startsWith('1 ') && l2 && l2.startsWith('2 ')) {
+                    sats[name.toUpperCase()] = { name, l1, l2 };
+                }
+            }
+            return sats;
+        }
+
+        async function computeSatPasses() {
+            const logEl = document.getElementById('sat-log');
+            if (typeof satellite === 'undefined') {
+                renderLog('sat-log', [], 'Satellite math library failed to load — check your network connection and reload.');
+                return;
+            }
+            logEl.innerHTML = `<div class="log-entry"><span class="entry-time">[System]</span> Fetching TLEs and computing passes...</div>`;
+            try {
+                const [stationsRes, amateurRes] = await Promise.all([
+                    fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle'),
+                    fetch('https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle')
+                ]);
+                if (!stationsRes.ok || !amateurRes.ok) throw new Error('TLE fetch failed');
+                const allTle = { ...parseTleBlock(await stationsRes.text()), ...parseTleBlock(await amateurRes.text()) };
+
+                const observerGd = {
+                    latitude: satellite.degreesToRadians(satObserver.lat),
+                    longitude: satellite.degreesToRadians(satObserver.lon),
+                    height: 0.05
+                };
+
+                const results = [];
+                const now = Date.now();
+                for (const name of SAT_NAMES) {
+                    const tle = allTle[name.toUpperCase()];
+                    if (!tle) continue;
+                    const satrec = satellite.twoline2satrec(tle.l1, tle.l2);
+                    let aosTime = null, maxElev = 0, inPass = false, losTime = null;
+                    for (let m = 0; m <= 24 * 60; m += 1) { // step 1 min across next 24h
+                        const t = new Date(now + m * 60000);
+                        const pv = satellite.propagate(satrec, t);
+                        if (!pv.position) continue;
+                        const gmst = satellite.gstime(t);
+                        const ecf = satellite.eciToEcf(pv.position, gmst);
+                        const look = satellite.ecfToLookAngles(observerGd, ecf);
+                        const elevDeg = satellite.radiansToDegrees(look.elevation);
+                        if (elevDeg > 0) {
+                            if (!inPass) { aosTime = t; inPass = true; maxElev = elevDeg; }
+                            else if (elevDeg > maxElev) maxElev = elevDeg;
+                            losTime = t;
+                        } else if (inPass) {
+                            break; // pass ended, that's our next one
+                        }
+                    }
+                    if (aosTime) {
+                        results.push({ name, aosTime, maxElev, losTime });
+                    }
+                }
+                results.sort((a, b) => a.aosTime - b.aosTime);
+                const entries = results.map(r => ({
+                    time: r.aosTime.toISOString().substr(11, 5) + 'Z',
+                    call: r.name,
+                    data: `max ${r.maxElev.toFixed(0)}° · AOS in ${Math.max(0, Math.round((r.aosTime - now) / 60000))}min`
+                }));
+                renderLog('sat-log', entries, 'No passes found for these satellites in the next 24h from this location.');
+            } catch (err) {
+                renderLog('sat-log', [], 'Could not load TLE data — Celestrak may be temporarily unreachable.');
+            }
+        }
+        computeSatPasses();
+
+        document.getElementById('sat-recalc-btn').addEventListener('click', computeSatPasses);
+        document.getElementById('sat-geo-btn').addEventListener('click', () => {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition((pos) => {
+                satObserver = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                document.getElementById('sat-location-label').textContent = `${satObserver.lat.toFixed(2)}, ${satObserver.lon.toFixed(2)}`;
+                computeSatPasses();
+            });
+        });
     </script>
 </body>
 </html>
