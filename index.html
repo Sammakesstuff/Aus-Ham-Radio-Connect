@@ -96,14 +96,14 @@
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                         <button id="toggle-grid-btn" style="background: #21262d; border: 1px solid #30363d; color: #c9d1d9;">Toggle Grid</button>
                         <button id="toggle-greyline-btn" style="background: #21262d; border: 1px solid #30363d; color: #c9d1d9;">Toggle Greyline</button>
-                        <input type="text" id="callsign-input" placeholder="VK3RHD-1">
-                        <button id="search-btn">Track Station</button>
+                        <input type="text" id="callsign-input" placeholder="VK3RHD-1, VK4AHA, VK2ABC" style="min-width: 180px;">
+                        <button id="search-btn">Plot Stations</button>
                     </div>
                 </div>
                 <div id="aprs-map"></div>
                 <div id="map-status" style="display:none; font-size:0.8rem; color:#eab308; margin-top:0.5rem; padding:0.5rem; background:#0d1117; border:1px solid #30363d; border-radius:0.25rem;"></div>
                 <div class="warning-note" style="color:#eab308; border-top:1px dashed #30363d;">
-                    <b>Dear HackClub Reviewer,</b> Toggle Grid and Toggle Greyline work with no setup. Track Station searches need a free aprs.fi API key — grab one at <a href="https://aprs.fi/page/api" target="_blank" style="color:#58a6ff;">aprs.fi/page/api</a> and paste it into the <b>Settings tab</b> (saved to this browser only, never committed to the repo).
+                    <b>Dear HackClub Reviewer,</b> Toggle Grid and Toggle Greyline work with no setup. Station plotting needs a free aprs.fi API key (Settings tab). Note: aprs.fi's free API only looks up callsigns you name — it has no "show everyone in this area" search — so this is a watch list (comma-separated, up to 20 calls) rather than an automatic area scan. Each station is plotted with its real APRS symbol icon.
                 </div>
             </div>
 
@@ -602,42 +602,106 @@
             });
         }
 
-        // --- Track Station (APRS.fi lookup) — needs a free API key from https://aprs.fi/page/api ---
+        // --- Station Plotting (APRS.fi lookup) — needs a free API key from https://aprs.fi/page/api ---
         // Dear HackClub Reviewer: paste a free aprs.fi key into the Settings tab to enable this —
         // it's saved to this browser's localStorage only, never committed to the repo.
         // Grid/greyline overlays work with no key at all.
+        //
+        // NOTE: aprs.fi's free API intentionally does not support area/bounding-box search — it
+        // only returns data for callsigns you explicitly name (max 20 per request). So this is a
+        // "watch list" you plot on demand, not a live auto-populate-everything-in-view feed.
 
-        let stationMarker = null;
+        // Rough mapping of common APRS primary/alternate table symbol codes to an icon + label.
+        // Not the full ~250-symbol APRS table — covers the common ham cases, falls back to a
+        // plain marker for anything unmapped.
+        const APRS_SYMBOL_MAP = {
+            '-': { emoji: '🏠', label: 'House' },
+            '>': { emoji: '🚗', label: 'Car' },
+            'k': { emoji: '🚚', label: 'Truck' },
+            'b': { emoji: '🚲', label: 'Bicycle' },
+            'v': { emoji: '🚐', label: 'Van' },
+            'j': { emoji: '🚙', label: 'Jeep' },
+            'U': { emoji: '🚌', label: 'Bus' },
+            'a': { emoji: '🚑', label: 'Ambulance' },
+            'f': { emoji: '🚒', label: 'Fire Truck' },
+            'Y': { emoji: '⛵', label: 'Sailboat' },
+            's': { emoji: '🚢', label: 'Ship' },
+            'O': { emoji: '🎈', label: 'Balloon' },
+            '_': { emoji: '🌦️', label: 'Weather Station' },
+            '#': { emoji: '📡', label: 'Digipeater' },
+            'r': { emoji: '📻', label: 'Repeater' },
+            'g': { emoji: '✈️', label: 'Glider' },
+            '^': { emoji: '✈️', label: 'Aircraft' },
+            ';': { emoji: '⛺', label: 'Campground' },
+            'P': { emoji: '👮', label: 'Police' },
+            'H': { emoji: '🏨', label: 'Hotel' }
+        };
+        function getAprsSymbol(symbolStr) {
+            if (!symbolStr) return { emoji: '📍', label: 'Station' };
+            const code = symbolStr.slice(-1); // last char is the symbol code, first is the table selector
+            return APRS_SYMBOL_MAP[code] || { emoji: '📍', label: 'Station' };
+        }
+        function buildStationIcon(emoji) {
+            return L.divIcon({
+                className: 'aprs-station-icon',
+                html: `<div style="background:#161b22; border:2px solid #ec4899; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 0 6px rgba(236,72,153,0.6);">${emoji}</div>`,
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+                popupAnchor: [0, -16]
+            });
+        }
+
+        const stationMarkersLayer = L.layerGroup().addTo(map);
+
         async function trackStation() {
             hideMapNotice();
-            const raw = document.getElementById('callsign-input').value.trim().toUpperCase();
+            const raw = document.getElementById('callsign-input').value.trim();
             if (!raw) {
-                showMapNotice('Enter a callsign first, e.g. VK3RHD-1');
+                showMapNotice('Enter one or more callsigns, comma-separated, e.g. VK3RHD-1, VK4AHA');
                 return;
             }
+            const calls = [...new Set(raw.split(',').map(c => c.trim().toUpperCase()).filter(Boolean))].slice(0, 20);
+            if (!calls.length) return;
             if (!appSettings.aprsApiKey) {
-                showMapNotice('Live tracking needs a free aprs.fi API key — get one at aprs.fi/page/api and paste it into the Settings tab.');
+                showMapNotice('Station plotting needs a free aprs.fi API key — get one at aprs.fi/page/api and paste it into the Settings tab.');
                 return;
             }
             const searchBtn = document.getElementById('search-btn');
             const originalLabel = searchBtn.textContent;
             searchBtn.disabled = true;
-            searchBtn.textContent = 'Tracking...';
+            searchBtn.textContent = 'Plotting...';
             try {
-                const res = await fetch(`https://api.aprs.fi/api/get?name=${encodeURIComponent(raw)}&what=loc&apikey=${appSettings.aprsApiKey}&format=json`);
+                const res = await fetch(`https://api.aprs.fi/api/get?name=${encodeURIComponent(calls.join(','))}&what=loc&apikey=${appSettings.aprsApiKey}&format=json`);
                 const data = await res.json();
+                stationMarkersLayer.clearLayers();
+
                 if (!data.entries || data.entries.length === 0) {
-                    showMapNotice(`No recent position found for ${raw}.`);
+                    showMapNotice(`No recent position found for: ${calls.join(', ')}`);
                     return;
                 }
-                const entry = data.entries[0];
-                const lat = parseFloat(entry.lat);
-                const lon = parseFloat(entry.lng);
-                if (stationMarker) map.removeLayer(stationMarker);
-                stationMarker = L.marker([lat, lon]).addTo(map)
-                    .bindPopup(`<b>${raw}</b><br>${entry.comment ? entry.comment : 'No comment'}`)
-                    .openPopup();
-                map.setView([lat, lon], 8);
+
+                const bounds = [];
+                data.entries.forEach(entry => {
+                    const lat = parseFloat(entry.lat);
+                    const lon = parseFloat(entry.lng);
+                    if (isNaN(lat) || isNaN(lon)) return;
+                    const sym = getAprsSymbol(entry.symbol);
+                    const ageMin = entry.lasttime ? Math.round((Date.now() / 1000 - parseInt(entry.lasttime, 10)) / 60) : null;
+                    const ageStr = ageMin === null ? 'unknown' : (ageMin < 60 ? `${ageMin}m ago` : `${Math.round(ageMin / 60)}h ago`);
+                    L.marker([lat, lon], { icon: buildStationIcon(sym.emoji) }).addTo(stationMarkersLayer)
+                        .bindPopup(`<b>${entry.name}</b> — ${sym.label}<br>${entry.comment ? entry.comment : 'No comment'}<br><span style="color:#8b949e; font-size:0.75rem;">Updated ${ageStr}</span>`);
+                    bounds.push([lat, lon]);
+                });
+
+                if (bounds.length === 1) {
+                    map.setView(bounds[0], 10);
+                } else if (bounds.length > 1) {
+                    map.fitBounds(bounds, { padding: [40, 40] });
+                }
+
+                const foundNames = new Set(data.entries.map(e => e.name));
+                const notFound = calls.filter(c => !foundNames.has(c));
+                if (notFound.length) showMapNotice(`No recent data for: ${notFound.join(', ')}`);
             } catch (err) {
                 showMapNotice('Lookup failed — check your connection or API key.');
             } finally {
